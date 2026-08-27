@@ -257,6 +257,7 @@
       <span>Wakasek Kurikulum</span>
       <span>Wakasek Humas</span>
       <span>Wakasek Sarpras</span>
+      <span>Tata Usaha</span>
     </div>
   </div>
   <div class="login-form-panel">
@@ -277,7 +278,7 @@
         <strong>Akun demo</strong> (ubah di <code>data/users.js</code>):<br>
         <code>gurubk / bk123</code> · <code>wakesis / wakesis123</code> · <code>kurikulum / kurikulum123</code><br>
         <code>humas / humas123</code> · <code>sarpras / sarpras123</code><br>
-        <code>kepsek / kepsek123</code> · <code>pengawas / pengawas123</code>
+        <code>tu / tu123</code> · <code>kepsek / kepsek123</code> · <code>pengawas / pengawas123</code>
       </div>
     </form>
   </div>
@@ -322,6 +323,7 @@
 <script src="data/kurikulum.js"></script>
 <script src="data/humas.js"></script>
 <script src="data/sarpras.js"></script>
+<script src="data/tata-usaha.js"></script>
 
 <script>
 /* =========================================================
@@ -473,6 +475,30 @@
         prioritas:data.prioritas, status:data.status
       });
     },
+    "tu-surat-masuk": (data)=>{
+      addExtra("tu_surat_masuk", {
+        tanggal:data.tanggal, nomorSurat:data.nomorSurat, asal:data.asal,
+        perihal:data.perihal, status:data.status
+      });
+    },
+    "tu-surat-keluar": (data)=>{
+      addExtra("tu_surat_keluar", {
+        tanggal:data.tanggal, nomorSurat:data.nomorSurat, tujuan:data.tujuan,
+        perihal:data.perihal, status:data.status
+      });
+    },
+    "tu-administrasi-siswa": (data)=>{
+      addExtra("tu_administrasi_siswa", {
+        tanggal:data.tanggal, siswa:data.siswa, kelas:data.kelas,
+        jenis:data.jenis, keterangan:data.keterangan
+      });
+    },
+    "tu-keuangan": (data)=>{
+      addExtra("tu_keuangan", {
+        tanggal:data.tanggal, siswa:data.siswa, kelas:data.kelas,
+        keterangan:data.keterangan, nominal:data.nominal, status:data.status
+      });
+    },
     "catatan-pemantauan": (data, user)=>{
       const list = getExtra("catatan_pemantauan");
       list.unshift({
@@ -494,6 +520,10 @@
   const getPublikasiHumas = ()=> withExtra("humas_publikasi", DATA_HUMAS.publikasi);
   const getPengajuanSarpras = ()=> withExtra("sarpras_pengajuan", DATA_SARPRAS.pengajuanPerbaikan);
   const getCatatanPemantauan = ()=> getExtra("catatan_pemantauan");
+  const getSuratMasuk        = ()=> withExtra("tu_surat_masuk", DATA_TATA_USAHA.suratMasuk);
+  const getSuratKeluar       = ()=> withExtra("tu_surat_keluar", DATA_TATA_USAHA.suratKeluar);
+  const getAdministrasiSiswa = ()=> withExtra("tu_administrasi_siswa", DATA_TATA_USAHA.administrasiSiswa);
+  const getKeuangan          = ()=> withExtra("tu_keuangan", DATA_TATA_USAHA.keuangan);
 
   /* =========================================================
      VIEW BUILDERS — satu fungsi per "tab" tiap divisi
@@ -723,6 +753,81 @@
     {key:"ruang",label:"Ruang / Fasilitas"},{key:"kondisi",label:"Kondisi",type:"status"},{key:"catatan",label:"Catatan"}
   ]);
 
+  /* ---------- TATA USAHA ---------- */
+  VIEWS.tu_ringkasan = ()=>{
+    const r = DATA_TATA_USAHA.ringkasan;
+    return `
+      <div class="stat-grid">
+        ${statCard(r.siswaAktif,"Siswa Aktif")}
+        ${statCard(getSuratMasuk().length,"Surat Masuk Tercatat")}
+        ${statCard(getSuratKeluar().length,"Surat Keluar Tercatat")}
+        ${statCard(getKeuangan().length,"Catatan Pembayaran")}
+      </div>
+      <div class="section">
+        ${sectionHead("Surat masuk terbaru")}
+        ${renderTable(getSuratMasuk().slice(0,5), [
+          {key:"tanggal",label:"Tanggal",type:"date"},{key:"nomorSurat",label:"No. Surat"},
+          {key:"asal",label:"Asal"},{key:"perihal",label:"Perihal"},{key:"status",label:"Status",type:"status"}
+        ])}
+      </div>
+      <div class="section">
+        ${sectionHead("Status pembayaran terbaru")}
+        ${renderTable(getKeuangan().slice(0,5), [
+          {key:"tanggal",label:"Tanggal",type:"date"},{key:"siswa",label:"Siswa"},
+          {key:"keterangan",label:"Keterangan"},{key:"nominal",label:"Nominal"},{key:"status",label:"Status",type:"status"}
+        ])}
+      </div>`;
+  };
+  VIEWS.tu_surat_masuk = ()=>`
+      ${addForm("tu-surat-masuk","Catat surat masuk",[
+        {name:"tanggal",label:"Tanggal",type:"date"},
+        {name:"nomorSurat",label:"Nomor surat"},
+        {name:"asal",label:"Asal surat"},
+        {name:"perihal",label:"Perihal",full:true},
+        {name:"status",label:"Status",type:"select",options:["Menunggu Disposisi","Diproses","Diarsipkan"]}
+      ])}
+      ${renderTable(getSuratMasuk(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"nomorSurat",label:"No. Surat"},
+        {key:"asal",label:"Asal"},{key:"perihal",label:"Perihal"},{key:"status",label:"Status",type:"status"}
+      ])}`;
+  VIEWS.tu_surat_keluar = ()=>`
+      ${addForm("tu-surat-keluar","Catat surat keluar",[
+        {name:"tanggal",label:"Tanggal",type:"date"},
+        {name:"nomorSurat",label:"Nomor surat"},
+        {name:"tujuan",label:"Tujuan surat"},
+        {name:"perihal",label:"Perihal",full:true},
+        {name:"status",label:"Status",type:"select",options:["Draft","Terkirim"]}
+      ])}
+      ${renderTable(getSuratKeluar(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"nomorSurat",label:"No. Surat"},
+        {key:"tujuan",label:"Tujuan"},{key:"perihal",label:"Perihal"},{key:"status",label:"Status",type:"status"}
+      ])}`;
+  VIEWS.tu_administrasi = ()=>`
+      ${addForm("tu-administrasi-siswa","Catat administrasi siswa",[
+        {name:"tanggal",label:"Tanggal",type:"date"},
+        {name:"siswa",label:"Nama siswa"},
+        {name:"kelas",label:"Kelas"},
+        {name:"jenis",label:"Jenis",type:"select",options:["Siswa Baru","Mutasi Masuk","Mutasi Keluar","Update Data"]},
+        {name:"keterangan",label:"Keterangan",type:"textarea",full:true}
+      ])}
+      ${renderTable(getAdministrasiSiswa(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"siswa",label:"Siswa"},{key:"kelas",label:"Kelas"},
+        {key:"jenis",label:"Jenis",type:"status"},{key:"keterangan",label:"Keterangan"}
+      ])}`;
+  VIEWS.tu_keuangan = ()=>`
+      ${addForm("tu-keuangan","Catat pembayaran / transaksi",[
+        {name:"tanggal",label:"Tanggal",type:"date"},
+        {name:"siswa",label:"Nama siswa"},
+        {name:"kelas",label:"Kelas"},
+        {name:"keterangan",label:"Keterangan pembayaran",full:true},
+        {name:"nominal",label:"Nominal (contoh: Rp 350.000)"},
+        {name:"status",label:"Status",type:"select",options:["Lunas","Cicilan","Belum Lunas"]}
+      ])}
+      ${renderTable(getKeuangan(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"siswa",label:"Siswa"},{key:"kelas",label:"Kelas"},
+        {key:"keterangan",label:"Keterangan"},{key:"nominal",label:"Nominal"},{key:"status",label:"Status",type:"status"}
+      ])}`;
+
   /* ---------- MONITORING (Kepala Sekolah & Pengawas) ---------- */
   VIEWS.monitor_ringkasan = ()=>{
     return `
@@ -733,6 +838,7 @@
         ${statCard(getJadwalUjian().length,"Agenda Ujian")}
         ${statCard(getKegiatanHumas().length,"Kegiatan Humas")}
         ${statCard(getPengajuanSarpras().length,"Pengajuan Sarpras")}
+        ${statCard(getSuratMasuk().length + getSuratKeluar().length,"Surat Tata Usaha")}
       </div>
       <div class="section">
         ${sectionHead("Ringkasan lintas divisi","Dipantau oleh Kepala Sekolah & Pengawas Sekolah")}
@@ -754,6 +860,9 @@
           <tr><td><span class="role-chip" style="background:${ROLE_INFO.sarpras.color}22;color:${ROLE_INFO.sarpras.color}">Sarpras</span></td>
               <td>${DATA_SARPRAS.ringkasan.perluPerbaikan} aset perlu perbaikan</td>
               <td>Lihat tab "Sarpras" untuk rincian.</td></tr>
+          <tr><td><span class="role-chip" style="background:${ROLE_INFO.tata_usaha.color}22;color:${ROLE_INFO.tata_usaha.color}">Tata Usaha</span></td>
+              <td>${getSuratMasuk().length} surat masuk, ${getKeuangan().filter(k=>k.status!=='Lunas').length} pembayaran belum lunas</td>
+              <td>Lihat tab "Tata Usaha" untuk rincian.</td></tr>
         </tbody></table></div>
       </div>`;
   };
@@ -800,6 +909,30 @@
       ${sectionHead("Kondisi ruang & fasilitas")}
       ${renderTable(DATA_SARPRAS.kondisiRuang, [
         {key:"ruang",label:"Ruang"},{key:"kondisi",label:"Kondisi",type:"status"},{key:"catatan",label:"Catatan"}
+      ])}`;
+  VIEWS.monitor_tu = ()=> `
+      ${sectionHead("Surat masuk")}
+      ${renderTable(getSuratMasuk(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"nomorSurat",label:"No. Surat"},
+        {key:"asal",label:"Asal"},{key:"status",label:"Status",type:"status"}
+      ])}
+      <div style="height:26px"></div>
+      ${sectionHead("Surat keluar")}
+      ${renderTable(getSuratKeluar(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"nomorSurat",label:"No. Surat"},
+        {key:"tujuan",label:"Tujuan"},{key:"status",label:"Status",type:"status"}
+      ])}
+      <div style="height:26px"></div>
+      ${sectionHead("Administrasi siswa")}
+      ${renderTable(getAdministrasiSiswa(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"siswa",label:"Siswa"},
+        {key:"jenis",label:"Jenis",type:"status"},{key:"keterangan",label:"Keterangan"}
+      ])}
+      <div style="height:26px"></div>
+      ${sectionHead("Keuangan / pembayaran siswa")}
+      ${renderTable(getKeuangan(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"siswa",label:"Siswa"},
+        {key:"keterangan",label:"Keterangan"},{key:"nominal",label:"Nominal"},{key:"status",label:"Status",type:"status"}
       ])}`;
   VIEWS.monitor_catatan = ()=>{
     const notes = getCatatanPemantauan();
@@ -850,6 +983,13 @@
       {id:"sarpras_pengajuan", label:"Pengajuan Perbaikan", title:"Pengajuan Perbaikan"},
       {id:"sarpras_kondisi", label:"Kondisi Ruang", title:"Kondisi Ruang & Fasilitas"}
     ],
+    tata_usaha: [
+      {id:"tu_ringkasan", label:"Ringkasan", title:"Ringkasan Tata Usaha"},
+      {id:"tu_surat_masuk", label:"Surat Masuk", title:"Surat Masuk"},
+      {id:"tu_surat_keluar", label:"Surat Keluar", title:"Surat Keluar"},
+      {id:"tu_administrasi", label:"Administrasi Siswa", title:"Administrasi Siswa"},
+      {id:"tu_keuangan", label:"Keuangan", title:"Keuangan / Pembayaran Siswa"}
+    ],
     kepala_sekolah: [
       {id:"monitor_ringkasan", label:"Ringkasan Umum", title:"Ringkasan Umum Sekolah"},
       {id:"monitor_bk", label:"Guru BK", title:"Pemantauan — Guru BK"},
@@ -857,6 +997,7 @@
       {id:"monitor_kurikulum", label:"Kurikulum", title:"Pemantauan — Kurikulum"},
       {id:"monitor_humas", label:"Humas", title:"Pemantauan — Humas"},
       {id:"monitor_sarpras", label:"Sarpras", title:"Pemantauan — Sarpras"},
+      {id:"monitor_tu", label:"Tata Usaha", title:"Pemantauan — Tata Usaha"},
       {id:"monitor_catatan", label:"Catatan Pemantauan", title:"Catatan Pemantauan"}
     ]
   };
@@ -918,20 +1059,62 @@
     $("#content").innerHTML = builder ? builder() : `<div class="empty-state">Tampilan belum tersedia.</div>`;
   }
 
+  /* ---------------- Cek file data ---------------- */
+  // Jika salah satu file di folder data/ gagal dimuat (mis. folder "data"
+  // tidak ikut ter-upload, path salah, atau nama file berubah), variabel di
+  // bawah ini tidak akan ada. Kita cek di awal supaya kegagalan login tidak
+  // terjadi secara diam-diam tanpa pesan apa pun ke pengguna.
+  function checkDataLoaded(){
+    const required = {
+      "USERS (data/users.js)": typeof USERS !== "undefined",
+      "ROLE_INFO (data/users.js)": typeof ROLE_INFO !== "undefined",
+      "DATA_GURU_BK (data/guru-bk.js)": typeof DATA_GURU_BK !== "undefined",
+      "DATA_KESISWAAN (data/wakasek-kesiswaan.js)": typeof DATA_KESISWAAN !== "undefined",
+      "DATA_KURIKULUM (data/kurikulum.js)": typeof DATA_KURIKULUM !== "undefined",
+      "DATA_HUMAS (data/humas.js)": typeof DATA_HUMAS !== "undefined",
+      "DATA_SARPRAS (data/sarpras.js)": typeof DATA_SARPRAS !== "undefined",
+      "DATA_TATA_USAHA (data/tata-usaha.js)": typeof DATA_TATA_USAHA !== "undefined"
+    };
+    const missing = Object.keys(required).filter(k => !required[k]);
+    return missing;
+  }
+
   /* ---------------- Event bindings ---------------- */
   $("#login-form").addEventListener("submit", function(e){
     e.preventDefault();
-    const username = $("#login-username").value.trim();
-    const password = $("#login-password").value;
-    const user = findUser(username, password);
-    if(!user){
-      showLogin("Username atau kata sandi salah. Silakan coba lagi.");
+
+    const missing = checkDataLoaded();
+    if(missing.length > 0){
+      showLogin(
+        "Gagal memuat data aplikasi: " + missing.join(", ") + ". " +
+        "Pastikan folder \"data\" berada di lokasi yang sama dengan index.html " +
+        "(sebagai folder bertetangga, bukan di dalam folder lain), lalu muat ulang halaman. " +
+        "Jika ini terjadi saat membuka file secara langsung (bukan lewat GitHub Pages/server), " +
+        "coba jalankan lewat server lokal karena sebagian browser memblokir pemuatan file lokal."
+      );
       return;
     }
-    sessionStorage.setItem("sim_sekolah_user", user.username);
-    $("#login-username").value = "";
-    $("#login-password").value = "";
-    showDashboard(user);
+
+    try{
+      const username = $("#login-username").value.trim();
+      const password = $("#login-password").value;
+      if(!username || !password){
+        showLogin("Mohon isi nama pengguna dan kata sandi.");
+        return;
+      }
+      const user = findUser(username, password);
+      if(!user){
+        showLogin("Username atau kata sandi salah. Silakan coba lagi.");
+        return;
+      }
+      sessionStorage.setItem("sim_sekolah_user", user.username);
+      $("#login-username").value = "";
+      $("#login-password").value = "";
+      showDashboard(user);
+    }catch(err){
+      console.error("Login error:", err);
+      showLogin("Terjadi kesalahan teknis saat memproses login: " + err.message);
+    }
   });
 
   $("#side-nav").addEventListener("click", function(e){
@@ -968,13 +1151,35 @@
   /* ---------------- Init ---------------- */
   $("#brand-title").innerHTML = `Portal Manajemen<br>${escapeHtml(CONFIG.schoolName)}`;
 
-  const savedUsername = sessionStorage.getItem("sim_sekolah_user");
-  const savedUser = savedUsername ? findUserByUsername(savedUsername) : null;
-  if(savedUser){
-    showDashboard(savedUser);
+  // Peringatan dini kalau file data belum berhasil dimuat, sebelum pengguna
+  // sempat mencoba login dan bingung kenapa tidak terjadi apa-apa.
+  const missingOnLoad = checkDataLoaded();
+  if(missingOnLoad.length > 0){
+    showLogin(
+      "Aplikasi belum bisa memuat data berikut: " + missingOnLoad.join(", ") + ". " +
+      "Pastikan folder \"data\" dan seluruh isinya berada tepat di sebelah index.html."
+    );
   } else {
-    showLogin();
+    const savedUsername = sessionStorage.getItem("sim_sekolah_user");
+    const savedUser = savedUsername ? findUserByUsername(savedUsername) : null;
+    if(savedUser){
+      showDashboard(savedUser);
+    } else {
+      showLogin();
+    }
   }
+
+  // Jaring pengaman terakhir: kalau ada error JS lain yang tidak tertangkap
+  // (misalnya karena file rusak/termodifikasi), tampilkan di layar login
+  // alih-alih diam-diam gagal tanpa penjelasan.
+  window.addEventListener("error", function(e){
+    if(!$("#dashboard-screen").hidden) return; // hanya tampilkan saat di layar login
+    const box = $("#login-error");
+    if(box.hidden){
+      box.hidden = false;
+      box.textContent = "Terjadi kesalahan teknis: " + (e.message || "tidak diketahui") + ". Coba muat ulang halaman.";
+    }
+  });
 
 })();
 </script>
