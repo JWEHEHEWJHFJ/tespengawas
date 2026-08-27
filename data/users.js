@@ -16,7 +16,8 @@ const USERS = [
   { username: "wakesis",   password: "wakesis123",   role: "wakasek_kesiswaan",  name: "Rina Amelia, S.Pd.",           jabatan: "Wakasek Kesiswaan" },
   { username: "kurikulum", password: "kurikulum123", role: "kurikulum",          name: "Drs. Hendra Wijaya",           jabatan: "Wakasek Kurikulum" },
   { username: "humas",     password: "humas123",     role: "humas",              name: "Dewi Lestari, S.Sos.",         jabatan: "Wakasek Humas" },
-  { username: "sarpras",   password: "sarpras123",   role: "sarpras",            name: "Agus Setiawan, S.T.",          jabatan: "Wakasek Sarana Prasarana" }
+  { username: "sarpras",   password: "sarpras123",   role: "sarpras",            name: "Agus Setiawan, S.T.",          jabatan: "Wakasek Sarana Prasarana" },
+  { username: "tu",        password: "tu123",        role: "tata_usaha",         name: "Sri Handayani, A.Md.",         jabatan: "Kepala Tata Usaha" }
 ];
 
 /* Metadata tampilan per-role: label, warna aksen, singkatan untuk "stempel" */
@@ -27,7 +28,8 @@ const ROLE_INFO = {
   wakasek_kesiswaan: { label: "Wakasek Kesiswaan",   short: "KSW", color: "#9d174d" },
   kurikulum:         { label: "Wakasek Kurikulum",   short: "KUR", color: "#a16207" },
   humas:             { label: "Wakasek Humas",       short: "HMS", color: "#4338ca" },
-  sarpras:           { label: "Wakasek Sarpras",     short: "SPR", color: "#b91c1c" }
+  sarpras:           { label: "Wakasek Sarpras",     short: "SPR", color: "#b91c1c" },
+  tata_usaha:        { label: "Tata Usaha",          short: "TU",  color: "#6d28d9" }
 };
 
 /* Peran yang berperan sebagai pemantau (monitoring) atas semua divisi */

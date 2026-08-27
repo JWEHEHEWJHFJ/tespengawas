@@ -8,6 +8,7 @@ login sekolah dengan dashboard berbeda untuk tiap jabatan:
 - Wakasek Kurikulum
 - Wakasek Humas
 - Wakasek Sarana Prasarana
+- Tata Usaha
 - Kepala Sekolah (memantau semua divisi di atas)
 - Pengawas Sekolah (memantau semua divisi di atas)
 
@@ -21,6 +22,7 @@ data/wakasek-kesiswaan.js      ← data khusus dashboard Wakasek Kesiswaan
 data/kurikulum.js              ← data khusus dashboard Wakasek Kurikulum
 data/humas.js                  ← data khusus dashboard Wakasek Humas
 data/sarpras.js                ← data khusus dashboard Wakasek Sarpras
+data/tata-usaha.js             ← data khusus dashboard Tata Usaha
 ```
 
 `index.html` memuat kelima file data di atas dengan `<script src="...">`,
@@ -48,6 +50,7 @@ Semua akun didefinisikan di `data/users.js`:
 | kurikulum   | kurikulum123   | Wakasek Kurikulum       |
 | humas       | humas123       | Wakasek Humas           |
 | sarpras     | sarpras123     | Wakasek Sarpras         |
+| tu          | tu123          | Tata Usaha              |
 | kepsek      | kepsek123      | Kepala Sekolah          |
 | pengawas    | pengawas123    | Pengawas Sekolah        |
 
@@ -61,6 +64,7 @@ bagian `<script>` paling bawah, dan ubah `schoolName`.
 - **Wakasek Kurikulum**: ringkasan, jadwal ujian (bisa tambah agenda), capaian kurikulum, daftar mata pelajaran.
 - **Wakasek Humas**: ringkasan, kegiatan (bisa tambah), kerjasama mitra, publikasi (bisa tambah).
 - **Wakasek Sarpras**: ringkasan aset, inventaris, pengajuan perbaikan (bisa tambah), kondisi ruang.
+- **Tata Usaha**: ringkasan, surat masuk (bisa tambah), surat keluar (bisa tambah), administrasi siswa/mutasi (bisa tambah), keuangan & pembayaran siswa (bisa tambah).
 - **Kepala Sekolah & Pengawas Sekolah**: ringkasan lintas semua divisi di atas (read-only) ditambah halaman
   **Catatan Pemantauan** untuk menuliskan arahan/pembinaan yang tersimpan dan bisa dilihat bersama.
 
