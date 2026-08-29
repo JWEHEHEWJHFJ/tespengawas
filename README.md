@@ -1,93 +1,125 @@
-# SIM Sekolah — Portal Login & Dashboard Multi-Peran
+# Sistem Pelaporan Pengawas Sekolah
 
-Aplikasi web statis (HTML + CSS + JS, tanpa perlu server/database) untuk portal
-login sekolah dengan dashboard berbeda untuk tiap jabatan:
+Aplikasi web **satu halaman** (single-page app — HTML, CSS, JavaScript murni,
+tanpa framework/backend) untuk mengelola dua alur pelaporan sekolah:
 
-- Guru BK
-- Wakasek Kesiswaan
-- Wakasek Kurikulum
-- Wakasek Humas
-- Wakasek Sarana Prasarana
-- Tata Usaha
-- Kepala Sekolah (memantau semua divisi di atas)
-- Pengawas Sekolah (memantau semua divisi di atas)
+1. **Sekolah → Pengawas Sekolah** (pelaporan pengawasan lintas sekolah/kecamatan)
+2. **Organisasi Ekstrakurikuler → Wakasek Kesiswaan** (pelaporan kegiatan ekskul di dalam satu sekolah)
 
-## Struktur file
+Seluruh halaman (pemilihan akun + keempat dashboard) kini digabung dalam
+**satu file `index.html`**; perpindahan tampilan dilakukan oleh JavaScript
+tanpa reload/navigasi ke file lain. Cocok dihosting gratis di **GitHub Pages**.
+
+## Fitur
+
+- **Satu halaman (SPA)**: tidak ada lagi berkas HTML terpisah per peran — cukup buka `index.html`, dan aplikasi berpindah tampilan secara instan.
+- **Tanpa login/kata sandi**: pilih peran dan nama akun dari daftar, lalu langsung masuk ke dashboard.
+- **Dashboard Sekolah**: mengirim laporan (bulanan, semester, kegiatan, sarana prasarana, insidentil) ke pengawas pembina dan memantau status verifikasinya.
+- **Dashboard Pengawas**: melihat seluruh laporan dari sekolah binaan, memfilter berdasarkan sekolah/status, memberi catatan, lalu **Verifikasi** atau **Minta Revisi**.
+- **Dashboard Organisasi Ekstrakurikuler**: setiap organisasi ekskul (Pramuka, OSIS, PMR, Seni Tari, dst.) dapat mengirim laporan kegiatan, keanggotaan, prestasi/lomba, keuangan, atau insidentil kepada Wakasek Kesiswaan sekolahnya.
+- **Dashboard Wakasek Kesiswaan**: melihat seluruh laporan dari organisasi ekskul di sekolahnya, memfilter berdasarkan organisasi/status, memberi catatan, lalu **Verifikasi** atau **Minta Revisi**.
+- **Status laporan**: Menunggu → Terverifikasi / Perlu Revisi, ditampilkan sebagai "stempel" digital.
+- Data disimpan di **localStorage** browser (cocok untuk demo/prototipe berbasis situs statis; setiap perangkat punya salinan datanya sendiri).
+
+## Struktur Berkas
 
 ```
-index.html                     ← halaman login + seluruh dashboard (HTML/CSS/JS jadi satu)
-data/users.js                  ← daftar akun & peran (role) untuk login
-data/guru-bk.js                ← data khusus dashboard Guru BK
-data/wakasek-kesiswaan.js      ← data khusus dashboard Wakasek Kesiswaan
-data/kurikulum.js              ← data khusus dashboard Wakasek Kurikulum
-data/humas.js                  ← data khusus dashboard Wakasek Humas
-data/sarpras.js                ← data khusus dashboard Wakasek Sarpras
-data/tata-usaha.js             ← data khusus dashboard Tata Usaha
+pengawas-sekolah/
+├── index.html          # SATU-SATUNYA halaman: pemilihan akun + keempat dashboard (CSS sudah menyatu di dalamnya)
+├── css/
+│   └── style.css        # Salinan gaya visual untuk referensi/edit (tidak lagi di-link dari HTML)
+└── js/
+    ├── data.js          # Data awal (seed) + fungsi localStorage untuk kedua alur pelaporan
+    └── app.js           # Seluruh logika aplikasi: routing antar-tampilan + keempat dashboard
 ```
 
-`index.html` memuat kelima file data di atas dengan `<script src="...">`,
-jadi tiap divisi bisa mengelola datanya sendiri di file terpisah tanpa
-menyentuh file yang lain.
+> **Catatan tampilan:** gaya (CSS) ditulis langsung di dalam tag `<style>`
+> pada `index.html`, bukan dipanggil dari `css/style.css` melalui `<link>`.
+> Ini supaya tampilan tidak pernah gagal termuat hanya karena folder `css/`
+> tertinggal saat menyalin/mengunggah file. Font juga memakai font bawaan
+> sistem operasi (bukan Google Fonts) agar tidak bergantung koneksi internet
+> ke luar. Jika Anda mengedit tampilan, ubah `css/style.css` lalu salin ulang
+> isinya ke dalam tag `<style>` di `index.html`.
+>
+> **Catatan navigasi:** karena semuanya sekarang satu halaman, perpindahan
+> antar dashboard (dan tombol "Ganti Akun") tidak mengubah URL/alamat
+> browser — semuanya diatur oleh `js/app.js` dengan menampilkan/
+> menyembunyikan bagian (`<section class="view">`) yang relevan.
 
-## Cara deploy ke GitHub Pages
+## Akun yang Tersedia
 
-1. Buat repository baru di GitHub (bisa publik atau privat jika punya GitHub Pro/Team/EDU).
-2. Upload seluruh isi folder ini (`index.html` dan folder `data/`) ke root repository tersebut.
-3. Buka **Settings → Pages** di repository.
-4. Pada **Source**, pilih branch `main` dan folder `/ (root)`, lalu **Save**.
-5. Tunggu 1–2 menit, GitHub akan memberi URL seperti:
-   `https://<username-anda>.github.io/<nama-repo>/`
-6. Buka URL tersebut — halaman login akan langsung muncul.
+Tidak ada kata sandi — cukup pilih salah satu nama berikut di halaman pembuka.
 
-## Akun demo (ganti sebelum dipakai sungguhan)
+**Pihak Sekolah**
+| Nama Sekolah | NPSN |
+|---|---|
+| SDN 01 Panakkukang | 40307001 |
+| SMPN 05 Makassar | 40307005 |
+| SDN 12 Rappocini | 40307012 |
 
-Semua akun didefinisikan di `data/users.js`:
+**Pengawas Sekolah**
+| Nama | Wilayah Binaan |
+|---|---|
+| Drs. Ahmad Yani, M.Pd | Kecamatan Panakkukang (membina SDN 01 &amp; SMPN 05) |
+| Hj. Sitti Rahmawati, S.Pd., M.M. | Kecamatan Rappocini (membina SDN 12) |
 
-| Username    | Password       | Peran                  |
-|-------------|----------------|-------------------------|
-| gurubk      | bk123          | Guru BK                 |
-| wakesis     | wakesis123     | Wakasek Kesiswaan       |
-| kurikulum   | kurikulum123   | Wakasek Kurikulum       |
-| humas       | humas123       | Wakasek Humas           |
-| sarpras     | sarpras123     | Wakasek Sarpras         |
-| tu          | tu123          | Tata Usaha              |
-| kepsek      | kepsek123      | Kepala Sekolah          |
-| pengawas    | pengawas123    | Pengawas Sekolah        |
+**Wakasek Kesiswaan**
+| Nama | Sekolah |
+|---|---|
+| Muhammad Ridwan, S.Pd. | SDN 01 Panakkukang |
+| Andi Nurul Fadillah, S.Pd. | SMPN 05 Makassar |
+| Bahtiar, S.Pd. | SDN 12 Rappocini |
 
-Untuk mengganti nama sekolah, buka `index.html`, cari objek `CONFIG` di
-bagian `<script>` paling bawah, dan ubah `schoolName`.
+**Organisasi Ekstrakurikuler**
+| Organisasi | Sekolah | Pembina |
+|---|---|---|
+| Pramuka | SDN 01 Panakkukang | Kak Yusran, S.Pd. |
+| Pencak Silat | SDN 01 Panakkukang | Muh. Fadli, S.Pd. |
+| OSIS | SMPN 05 Makassar | Nurhayati, S.Pd. |
+| Palang Merah Remaja (PMR) | SMPN 05 Makassar | dr. Wahyuni |
+| Sanggar Seni Tari | SDN 12 Rappocini | Ibu Herlina, S.Pd. |
+| Pramuka | SDN 12 Rappocini | Kak Ilham, S.Pd. |
 
-## Fitur tiap dashboard
+## Cara Menjalankan di Lokal
 
-- **Guru BK**: ringkasan kasus, data kasus BK (bisa tambah kasus baru), jadwal konseling.
-- **Wakasek Kesiswaan**: ringkasan, pelanggaran siswa (bisa tambah), prestasi siswa (bisa tambah), daftar ekstrakurikuler.
-- **Wakasek Kurikulum**: ringkasan, jadwal ujian (bisa tambah agenda), capaian kurikulum, daftar mata pelajaran.
-- **Wakasek Humas**: ringkasan, kegiatan (bisa tambah), kerjasama mitra, publikasi (bisa tambah).
-- **Wakasek Sarpras**: ringkasan aset, inventaris, pengajuan perbaikan (bisa tambah), kondisi ruang.
-- **Tata Usaha**: ringkasan, surat masuk (bisa tambah), surat keluar (bisa tambah), administrasi siswa/mutasi (bisa tambah), keuangan & pembayaran siswa (bisa tambah).
-- **Kepala Sekolah & Pengawas Sekolah**: ringkasan lintas semua divisi di atas (read-only) ditambah halaman
-  **Catatan Pemantauan** untuk menuliskan arahan/pembinaan yang tersimpan dan bisa dilihat bersama.
+Karena hanya berkas statis, cukup buka `index.html` langsung di browser,
+atau jalankan server lokal sederhana:
 
-Data baru yang ditambahkan lewat form "+ Tambah ..." langsung ikut muncul di
-dashboard Kepala Sekolah dan Pengawas Sekolah, karena keduanya membaca sumber
-data yang sama.
+```bash
+cd pengawas-sekolah
+python3 -m http.server 8000
+```
 
-## ⚠️ Keterbatasan penting (baca sebelum dipakai sungguhan)
+Lalu buka `http://localhost:8000`.
 
-Ini adalah aplikasi **statis** tanpa backend/database sungguhan, karena
-dihosting di GitHub Pages. Konsekuensinya:
+## Cara Deploy ke GitHub Pages
 
-1. **Login bukan otentikasi aman.** Daftar username/password ada di
-   `data/users.js` yang bisa dibaca siapa pun yang membuka source code
-   halaman. Jangan gunakan password yang juga dipakai di sistem lain, dan
-   jangan anggap ini setara sistem login sungguhan untuk data sensitif.
-2. **Data yang ditambahkan lewat form disimpan di `localStorage` browser
-   masing-masing perangkat.** Artinya data yang ditambahkan Guru BK di
-   komputernya sendiri **tidak otomatis muncul** di komputer Kepala Sekolah,
-   kecuali mereka membuka aplikasi dari perangkat/browser yang sama.
-   Untuk data bersama yang benar-benar tersinkron antar pengguna dan
-   perangkat, aplikasi ini perlu dihubungkan ke backend + database
-   sungguhan (misalnya Google Sheets API, Firebase, atau server sendiri).
-3. Cocok dipakai untuk: demo internal, prototipe, atau penggunaan di satu
-   perangkat/laboratorium bersama. Untuk penggunaan sekolah nyata dengan
-   banyak pengguna di berbagai lokasi, disarankan menambahkan backend.
+1. Buat repository baru di GitHub, misalnya `pengawas-sekolah`.
+2. Unggah seluruh isi folder ini (`index.html`, folder `css/`, folder `js/`) ke root repository tersebut.
+   ```bash
+   cd pengawas-sekolah
+   git init
+   git add .
+   git commit -m "Inisialisasi aplikasi pelaporan pengawas sekolah (single-page)"
+   git branch -M main
+   git remote add origin https://github.com/USERNAME/pengawas-sekolah.git
+   git push -u origin main
+   ```
+3. Di GitHub, buka repository → **Settings** → **Pages**.
+4. Pada bagian **Build and deployment**, pilih **Source: Deploy from a branch**.
+5. Pilih **Branch: main** dan folder **/(root)**, lalu klik **Save**.
+6. Tunggu 1–2 menit, situs akan aktif di:
+   `https://USERNAME.github.io/pengawas-sekolah/`
+
+## Catatan Pengembangan Lanjutan
+
+- Data saat ini tersimpan di `localStorage` browser sehingga **tidak
+  disinkronkan antar perangkat**. Untuk penggunaan produksi lintas sekolah,
+  lapisan `js/data.js` bisa diganti agar memanggil backend/API
+  (misalnya Firebase, Supabase, atau REST API) sambil mempertahankan
+  fungsi-fungsi yang sama (`tambahLaporan`, `getLaporanBySekolah`,
+  `tambahLaporanEkskul`, `getLaporanEkskulByWakasek`, dst.) — `js/app.js`
+  tidak perlu diubah selama nama fungsi tersebut dipertahankan.
+- Tambahan yang mudah dikembangkan: unggah lampiran berupa berkas asli,
+  ekspor laporan ke PDF, notifikasi email saat laporan baru masuk,
+  laporan rekap tahunan per organisasi ekskul.
