@@ -1,985 +1,1187 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Sistem Pelaporan Pengawas Sekolah</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIM Sekolah — Portal Manajemen Sekolah</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* =========================================================
-   Pengawas Sekolah — token sistem visual
-   Konsep: "buku catatan pengawasan" — kertas resmi, tinta,
-   dan stempel verifikasi sebagai elemen tanda tangan desain.
-   ========================================================= */
-
-:root {
-  /* Warna */
-  --paper: #f6f2e9;
-  --paper-raised: #fffdf8;
-  --ink: #22262b;
-  --ink-soft: #565b52;
-  --navy: #1b2a4a;
-  --navy-light: #2e4468;
-  --gold: #a97b1f;
-  --gold-soft: #e8d7ab;
-  --green: #2f6b4f;
-  --green-soft: #e1ece5;
-  --red: #a73b2b;
-  --red-soft: #f3e2dd;
-  --amber: #a5721b;
-  --amber-soft: #f1e4c8;
-  --line: #d8cfb6;
-  --line-strong: #b8ac89;
-
-  /* Tipografi — pakai font bawaan sistem operasi (tanpa perlu koneksi internet
-     ke Google Fonts), agar tampilan tetap konsisten di mana pun dibuka. */
-  --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
-  --font-body: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-
-  /* Layout */
-  --radius: 3px;
-  --shadow-card: 0 1px 2px rgba(27, 42, 74, 0.06), 0 4px 14px rgba(27, 42, 74, 0.06);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.001ms !important;
-    transition-duration: 0.001ms !important;
+  :root{
+    --bg:#eef1f5;
+    --surface:#ffffff;
+    --surface-2:#f6f8fa;
+    --ink:#1b2330;
+    --muted:#64708a;
+    --line:#dde2ea;
+    --navy:#1b2a4a;
+    --navy-dark:#101a33;
+    --gold:#b7862a;
+    --gold-light:#f4e6c8;
+    --green:#1f7a4d; --green-bg:#e4f5ec;
+    --amber:#a5690a; --amber-bg:#fbecd2;
+    --red:#b13434; --red-bg:#fbe4e4;
+    --gray:#586074; --gray-bg:#eef0f4;
+    --radius:10px;
+    --shadow:0 1px 2px rgba(20,30,50,.06), 0 10px 26px -14px rgba(20,30,50,.22);
+    --font-display:'Fraunces',serif;
+    --font-body:'Inter',system-ui,-apple-system,sans-serif;
+    --font-mono:'IBM Plex Mono',monospace;
   }
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html, body {
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  background: var(--paper);
-  background-image:
-    linear-gradient(180deg, rgba(27,42,74,0.03), transparent 220px);
-  color: var(--ink);
-  font-family: var(--font-body);
-  font-size: 15px;
-  line-height: 1.55;
-  min-height: 100vh;
-}
-
-h1, h2, h3, .display {
-  font-family: var(--font-display);
-  color: var(--navy);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  margin: 0 0 0.4em;
-}
-
-a {
-  color: var(--navy);
-}
-
-button, input, select, textarea {
-  font-family: inherit;
-  font-size: inherit;
-}
-
-:focus-visible {
-  outline: 2px solid var(--gold);
-  outline-offset: 2px;
-}
-
-.eyebrow {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--gold);
-}
-
-/* ---------- Kop surat / letterhead ---------- */
-
-.letterhead {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  border-bottom: 3px double var(--navy);
-  padding-bottom: 14px;
-  margin-bottom: 22px;
-}
-
-.letterhead .seal {
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  border: 2px solid var(--navy);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-weight: 700;
-  color: var(--navy);
-  font-size: 18px;
-  flex-shrink: 0;
-  background: var(--paper-raised);
-}
-
-.letterhead .title-block .kop-line1 {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-}
-
-.letterhead .title-block h1 {
-  font-size: 21px;
-  margin: 2px 0 0;
-}
-
-/* ---------- Halaman login ---------- */
-
-.login-shell {
-  max-width: 460px;
-  margin: 6vh auto;
-  padding: 0 20px;
-}
-
-.login-card {
-  background: var(--paper-raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-card);
-  padding: 32px 30px 28px;
-}
-
-.login-card .letterhead {
-  margin-bottom: 20px;
-}
-
-.field {
-  margin-bottom: 16px;
-}
-
-.field label {
-  display: block;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--ink-soft);
-  margin-bottom: 5px;
-}
-
-.field input, .field select, .field textarea {
-  width: 100%;
-  border: 1px solid var(--line-strong);
-  background: var(--paper);
-  border-radius: var(--radius);
-  padding: 9px 11px;
-  color: var(--ink);
-}
-
-.field textarea {
-  resize: vertical;
-  min-height: 100px;
-}
-
-.role-toggle {
-  display: flex;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius);
-  overflow: hidden;
-  margin-bottom: 18px;
-}
-
-.role-toggle button {
-  flex: 1;
-  padding: 9px 0;
-  background: var(--paper);
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-  color: var(--ink-soft);
-  border-right: 1px solid var(--line-strong);
-}
-
-.role-toggle button:last-child {
-  border-right: none;
-}
-
-.role-toggle button.active {
-  background: var(--navy);
-  color: var(--paper-raised);
-}
-
-.role-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 18px;
-}
-
-.role-grid button {
-  padding: 10px 6px;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius);
-  background: var(--paper);
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 13px;
-  color: var(--ink-soft);
-  line-height: 1.3;
-}
-
-.role-grid button.active {
-  background: var(--navy);
-  color: var(--paper-raised);
-  border-color: var(--navy);
-}
-
-/* ---------- Perpindahan antar-tampilan (single-page app) ---------- */
-
-.view {
-  display: none;
-}
-
-.view.active {
-  display: block;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border: none;
-  border-radius: var(--radius);
-  padding: 10px 18px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.08s ease, background 0.15s ease;
-}
-
-.btn:active {
-  transform: translateY(1px);
-}
-
-.btn-primary {
-  background: var(--navy);
-  color: var(--paper-raised);
-  width: 100%;
-}
-
-.btn-primary:hover {
-  background: var(--navy-light);
-}
-
-.btn-ghost {
-  background: transparent;
-  color: var(--navy);
-  border: 1px solid var(--line-strong);
-}
-
-.btn-ghost:hover {
-  background: var(--paper);
-}
-
-.btn-sm {
-  padding: 6px 12px;
-  font-size: 13px;
-}
-
-.error-msg {
-  background: var(--red-soft);
-  color: var(--red);
-  border: 1px solid var(--red);
-  border-radius: var(--radius);
-  padding: 9px 12px;
-  font-size: 13.5px;
-  margin-bottom: 16px;
-  display: none;
-}
-
-.demo-accounts {
-  margin-top: 22px;
-  padding-top: 16px;
-  border-top: 1px dashed var(--line-strong);
-  font-size: 12.5px;
-  color: var(--ink-soft);
-}
-
-.demo-accounts .demo-row {
-  display: flex;
-  justify-content: space-between;
-  font-family: var(--font-mono);
-  padding: 3px 0;
-}
-
-/* ---------- Kerangka dashboard ---------- */
-
-.app-shell {
-  display: grid;
-  grid-template-columns: 230px 1fr;
-  min-height: 100vh;
-}
-
-.sidebar {
-  background: var(--navy);
-  color: var(--paper-raised);
-  padding: 24px 18px;
-  display: flex;
-  flex-direction: column;
-}
-
-.sidebar .seal {
-  background: var(--navy-light);
-  border-color: var(--gold-soft);
-  color: var(--gold-soft);
-}
-
-.sidebar .title-block .kop-line1 {
-  color: var(--gold-soft);
-  opacity: 0.85;
-}
-
-.sidebar .title-block h1 {
-  color: var(--paper-raised);
-  font-size: 16px;
-}
-
-.sidebar .letterhead {
-  border-bottom-color: rgba(255,255,255,0.25);
-}
-
-.user-card {
-  margin-top: 20px;
-  padding: 12px;
-  background: rgba(255,255,255,0.06);
-  border-radius: var(--radius);
-  border: 1px solid rgba(255,255,255,0.12);
-}
-
-.user-card .name {
-  font-weight: 600;
-  font-size: 13.5px;
-}
-
-.user-card .meta {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--gold-soft);
-  margin-top: 3px;
-}
-
-.sidebar-footer {
-  margin-top: auto;
-  padding-top: 18px;
-}
-
-.main {
-  padding: 32px 40px;
-  max-width: 1080px;
-}
-
-.page-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 22px;
-  flex-wrap: wrap;
-  gap: 14px;
-}
-
-.page-head p {
-  color: var(--ink-soft);
-  margin: 4px 0 0;
-  font-size: 13.5px;
-}
-
-/* ---------- Kartu statistik ---------- */
-
-.stat-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  margin-bottom: 28px;
-}
-
-.stat-card {
-  background: var(--paper-raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 16px 18px;
-}
-
-.stat-card .num {
-  font-family: var(--font-display);
-  font-size: 28px;
-  color: var(--navy);
-  line-height: 1;
-}
-
-.stat-card .label {
-  font-size: 12px;
-  color: var(--ink-soft);
-  margin-top: 6px;
-}
-
-/* ---------- Panel & form ---------- */
-
-.panel {
-  background: var(--paper-raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-card);
-  padding: 24px 26px;
-  margin-bottom: 26px;
-}
-
-.panel h2 {
-  font-size: 17px;
-  margin-bottom: 4px;
-}
-
-.panel .sub {
-  color: var(--ink-soft);
-  font-size: 13px;
-  margin-bottom: 18px;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px 18px;
-}
-
-.form-grid .span-2 {
-  grid-column: 1 / -1;
-}
-
-.filter-row {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 18px;
-  flex-wrap: wrap;
-}
-
-.filter-row select {
-  border: 1px solid var(--line-strong);
-  background: var(--paper-raised);
-  border-radius: var(--radius);
-  padding: 7px 10px;
-}
-
-/* ---------- Kartu laporan (dokumen) ---------- */
-
-.laporan-list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.laporan-card {
-  position: relative;
-  background: var(--paper-raised);
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--navy);
-  border-radius: var(--radius);
-  padding: 16px 20px 16px 18px;
-  box-shadow: var(--shadow-card);
-  overflow: hidden;
-}
-
-.laporan-card.status-diverifikasi { border-left-color: var(--green); }
-.laporan-card.status-perlu_revisi { border-left-color: var(--red); }
-.laporan-card.status-terkirim { border-left-color: var(--amber); }
-
-.laporan-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: flex-start;
-}
-
-.laporan-id {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--ink-soft);
-}
-
-.laporan-card h3 {
-  font-size: 16px;
-  margin: 2px 0 2px;
-}
-
-.laporan-meta {
-  font-size: 12.5px;
-  color: var(--ink-soft);
-}
-
-.laporan-meta strong {
-  color: var(--ink);
-}
-
-.laporan-isi {
-  margin: 12px 0 6px;
-  font-size: 13.5px;
-  color: var(--ink);
-}
-
-.laporan-lampiran {
-  font-size: 12px;
-  color: var(--ink-soft);
-  font-family: var(--font-mono);
-}
-
-.catatan-box {
-  margin-top: 12px;
-  background: var(--paper);
-  border: 1px dashed var(--line-strong);
-  border-radius: var(--radius);
-  padding: 10px 12px;
-  font-size: 13px;
-}
-
-.catatan-box .catatan-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--gold);
-  font-weight: 700;
-  margin-bottom: 4px;
-}
-
-.review-actions {
-  margin-top: 14px;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.review-actions textarea {
-  flex: 1;
-  min-width: 220px;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius);
-  padding: 8px 10px;
-  font-size: 13px;
-  min-height: 44px;
-  resize: vertical;
-  background: var(--paper);
-}
-
-/* ---------- Stempel status (elemen tanda / signature) ---------- */
-
-.stamp {
-  flex-shrink: 0;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  border: 2px solid currentColor;
-  border-radius: 50%;
-  width: 84px;
-  height: 84px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 6px;
-  transform: rotate(-8deg);
-  line-height: 1.2;
-  position: relative;
-}
-
-.stamp::before {
-  content: "";
-  position: absolute;
-  inset: 5px;
-  border: 1px solid currentColor;
-  border-radius: 50%;
-  opacity: 0.5;
-}
-
-.stamp.status-diverifikasi { color: var(--green); }
-.stamp.status-perlu_revisi { color: var(--red); }
-.stamp.status-terkirim { color: var(--amber); }
-
-/* ---------- Badge kecil (untuk daftar ringkas) ---------- */
-
-.badge {
-  display: inline-block;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 9px;
-  border-radius: 20px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.badge.status-diverifikasi { background: var(--green-soft); color: var(--green); }
-.badge.status-perlu_revisi { background: var(--red-soft); color: var(--red); }
-.badge.status-terkirim { background: var(--amber-soft); color: var(--amber); }
-
-.empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--ink-soft);
-  font-size: 13.5px;
-  border: 1px dashed var(--line-strong);
-  border-radius: var(--radius);
-  background: var(--paper-raised);
-}
-
-.toast {
-  position: fixed;
-  bottom: 22px;
-  right: 22px;
-  background: var(--navy);
-  color: var(--paper-raised);
-  padding: 12px 18px;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-card);
-  font-size: 13.5px;
-  opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  pointer-events: none;
-  z-index: 50;
-}
-
-.toast.show {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* ---------- Responsif ---------- */
-
-@media (max-width: 820px) {
-  .app-shell {
-    grid-template-columns: 1fr;
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:var(--font-body);
+    color:var(--ink);
+    background:var(--bg);
+    -webkit-font-smoothing:antialiased;
   }
-  .sidebar {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 18px;
-  }
-  .sidebar .letterhead { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
-  .user-card, .sidebar-footer { display: none; }
-  .main { padding: 22px 18px; }
-  .form-grid { grid-template-columns: 1fr; }
-  .stat-row { grid-template-columns: 1fr; }
-  .laporan-top { flex-direction: column; }
-  .stamp { align-self: flex-end; }
-}
+  h1,h2,h3{font-family:var(--font-display);margin:0;font-weight:600;}
+  button{font-family:inherit;cursor:pointer;}
+  input,select,textarea{font-family:inherit;}
+  a{color:inherit;}
+  [hidden]{display:none !important;}
 
+  /* ---------- Seal / stempel signature element ---------- */
+  .seal{
+    width:60px;height:60px;border-radius:50%;
+    border:2px solid currentColor;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-display);font-weight:700;font-size:13px;
+    letter-spacing:.02em;position:relative;flex-shrink:0;
+  }
+  .seal::before{
+    content:"";position:absolute;inset:5px;border:1px solid currentColor;
+    border-radius:50%;opacity:.55;
+  }
+  .seal-sm{width:38px;height:38px;font-size:10px;}
+  .seal-sm::before{inset:3px;}
+
+  /* ---------- Login screen ---------- */
+  .login-wrap{display:grid;grid-template-columns:1.05fr 1fr;min-height:100vh;}
+  .login-brand{
+    background:
+      radial-gradient(circle at 85% 15%, rgba(183,134,42,.18), transparent 45%),
+      linear-gradient(160deg,var(--navy),var(--navy-dark));
+    color:#fff;position:relative;overflow:hidden;
+    display:flex;flex-direction:column;justify-content:center;
+    padding:72px 64px;
+  }
+  .login-brand .seal-giant{
+    position:absolute;right:-60px;bottom:-60px;
+    width:340px;height:340px;color:rgba(255,255,255,.08);
+    font-size:34px;
+  }
+  .login-brand .eyebrow{
+    font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--gold);margin-bottom:18px;
+  }
+  .login-brand h1{font-size:clamp(30px,3.6vw,44px);line-height:1.15;max-width:480px;color:#fff;}
+  .login-brand p{color:rgba(255,255,255,.72);max-width:420px;margin-top:18px;line-height:1.6;font-size:15px;}
+  .brand-roles{display:flex;flex-wrap:wrap;gap:8px;margin-top:34px;}
+  .brand-roles span{
+    font-size:12px;border:1px solid rgba(255,255,255,.22);
+    padding:6px 12px;border-radius:999px;color:rgba(255,255,255,.85);
+  }
+  .login-form-panel{display:flex;align-items:center;justify-content:center;padding:32px;background:var(--bg);}
+  .login-card{
+    width:100%;max-width:380px;background:var(--surface);
+    border:1px solid var(--line);border-radius:var(--radius);
+    padding:38px 34px;box-shadow:var(--shadow);
+  }
+  .login-card h2{font-size:22px;margin-bottom:6px;}
+  .login-card .sub{color:var(--muted);font-size:14px;margin-bottom:26px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--ink);}
+  .field input, .field select, .field textarea{
+    width:100%;padding:10px 12px;border:1px solid var(--line);
+    border-radius:8px;font-size:14px;background:var(--surface-2);color:var(--ink);
+  }
+  .field input:focus, .field select:focus, .field textarea:focus,
+  button:focus-visible, .nav-item:focus-visible, .tab-btn:focus-visible{
+    outline:2px solid var(--gold);outline-offset:1px;
+  }
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    padding:11px 18px;border-radius:8px;border:1px solid transparent;
+    font-size:14px;font-weight:600;transition:filter .15s ease;
+  }
+  .btn:hover{filter:brightness(1.06);}
+  .btn-primary{background:var(--navy);color:#fff;width:100%;}
+  .btn-gold{background:var(--gold);color:#fff;}
+  .btn-outline{background:transparent;border:1px solid var(--line);color:var(--ink);}
+  .login-error{
+    background:var(--red-bg);color:var(--red);border:1px solid #f0c9c9;
+    padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:16px;
+  }
+  .demo-hint{
+    margin-top:22px;padding-top:18px;border-top:1px dashed var(--line);
+    font-size:12px;color:var(--muted);line-height:1.7;
+  }
+  .demo-hint code{font-family:var(--font-mono);background:var(--surface-2);padding:1px 5px;border-radius:4px;}
+
+  /* ---------- Dashboard shell ---------- */
+  #dashboard-screen{display:flex;min-height:100vh;}
+  #sidebar{
+    width:252px;flex-shrink:0;background:var(--navy-dark);color:#fff;
+    display:flex;flex-direction:column;
+  }
+  .side-head{padding:24px 20px;display:flex;gap:12px;align-items:center;border-bottom:1px solid rgba(255,255,255,.08);}
+  .side-head .school-name{font-family:var(--font-display);font-size:15px;line-height:1.25;}
+  .side-head .school-tag{font-size:11px;color:rgba(255,255,255,.5);font-family:var(--font-mono);letter-spacing:.05em;}
+  .side-role{
+    margin:18px 20px 6px;padding:10px 12px;border-radius:8px;
+    background:rgba(255,255,255,.06);font-size:12px;color:rgba(255,255,255,.85);
+  }
+  .side-role strong{display:block;font-size:13px;font-family:var(--font-display);color:#fff;margin-bottom:2px;}
+  nav#side-nav{flex:1;padding:10px 12px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;}
+  .nav-item{
+    text-align:left;background:transparent;color:rgba(255,255,255,.72);
+    border:none;border-left:3px solid transparent;padding:10px 12px;
+    border-radius:6px;font-size:14px;
+  }
+  .nav-item:hover{background:rgba(255,255,255,.06);color:#fff;}
+  .nav-item.active{background:rgba(255,255,255,.1);color:#fff;border-left-color:var(--gold);font-weight:600;}
+  .side-foot{padding:16px;border-top:1px solid rgba(255,255,255,.08);}
+  .side-foot .btn{width:100%;}
+
+  #main-col{flex:1;min-width:0;display:flex;flex-direction:column;}
+  #topbar{
+    height:66px;flex-shrink:0;background:var(--surface);
+    border-bottom:1px solid var(--line);display:flex;align-items:center;
+    justify-content:space-between;padding:0 28px;
+  }
+  #topbar .page-title{font-size:19px;}
+  #topbar .who{display:flex;align-items:center;gap:12px;}
+  #topbar .who .meta{text-align:right;}
+  #topbar .who .name{font-size:13.5px;font-weight:600;}
+  #topbar .who .jabatan{font-size:12px;color:var(--muted);}
+  #content{padding:28px 32px 60px;flex:1;overflow-y:auto;}
+
+  /* ---------- Tabs ---------- */
+  .tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:24px;flex-wrap:wrap;}
+  .tab-btn{
+    background:transparent;border:none;padding:11px 16px;font-size:13.5px;
+    color:var(--muted);border-bottom:2px solid transparent;font-weight:500;
+  }
+  .tab-btn.active{color:var(--navy);border-bottom-color:var(--gold);font-weight:700;}
+  .tab-btn:hover{color:var(--ink);}
+
+  /* ---------- Stat cards ---------- */
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:30px;}
+  .stat-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;}
+  .stat-card .num{font-size:30px;line-height:1;margin-bottom:6px;}
+  .stat-card .lbl{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;}
+
+  /* ---------- Section blocks ---------- */
+  .section{margin-bottom:34px;}
+  .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
+  .section-head h3{font-size:16px;}
+  .section-head .hint{font-size:12.5px;color:var(--muted);}
+
+  /* ---------- Table ---------- */
+  .table-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:560px;}
+  th{
+    text-align:left;background:var(--surface-2);padding:11px 16px;font-size:11.5px;
+    text-transform:uppercase;letter-spacing:.04em;color:var(--muted);
+    border-bottom:1px solid var(--line);white-space:nowrap;
+  }
+  td{padding:11px 16px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:var(--surface-2);}
+  .cell-date{font-family:var(--font-mono);font-size:12.5px;color:var(--muted);white-space:nowrap;}
+
+  .badge{display:inline-block;padding:3px 11px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap;}
+  .badge-green{background:var(--green-bg);color:var(--green);}
+  .badge-amber{background:var(--amber-bg);color:var(--amber);}
+  .badge-red{background:var(--red-bg);color:var(--red);}
+  .badge-gray{background:var(--gray-bg);color:var(--gray);}
+
+  .empty-state{padding:44px 20px;text-align:center;color:var(--muted);font-size:14px;}
+
+  /* ---------- Forms (add data) ---------- */
+  details.add-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:18px;}
+  details.add-box > summary{
+    list-style:none;cursor:pointer;padding:14px 18px;font-weight:600;font-size:13.5px;
+    display:flex;align-items:center;gap:8px;color:var(--navy);
+  }
+  details.add-box > summary::-webkit-details-marker{display:none;}
+  details.add-box > summary::before{content:"+";font-family:var(--font-mono);font-size:15px;}
+  details.add-box[open] > summary::before{content:"–";}
+  .add-box-body{padding:4px 18px 18px;border-top:1px solid var(--line);}
+  .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:16px 0;}
+  .form-grid .full{grid-column:1/-1;}
+
+  /* ---------- Monitoring notes (kepsek/pengawas) ---------- */
+  .note-item{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;}
+  .note-item .note-meta{font-size:12px;color:var(--muted);margin-bottom:6px;font-family:var(--font-mono);}
+  .note-item .note-meta strong{color:var(--ink);font-family:var(--font-body);}
+
+  .role-chip{
+    display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+    padding:4px 10px;border-radius:999px;
+  }
+
+  @media (max-width:900px){
+    .login-wrap{grid-template-columns:1fr;}
+    .login-brand{padding:44px 32px;min-height:260px;}
+    #dashboard-screen{flex-direction:column;}
+    #sidebar{width:100%;flex-direction:row;align-items:center;overflow-x:auto;}
+    .side-head{border-bottom:none;border-right:1px solid rgba(255,255,255,.08);}
+    .side-role{display:none;}
+    nav#side-nav{flex-direction:row;padding:8px;}
+    .nav-item{border-left:none;border-bottom:3px solid transparent;white-space:nowrap;}
+    .nav-item.active{border-left-color:transparent;border-bottom-color:var(--gold);}
+    .side-foot{border-top:none;}
+    #topbar{padding:0 16px;}
+    #content{padding:20px 16px 50px;}
+  }
 </style>
 </head>
 <body>
 
-<!-- ============ VIEW: PILIH AKUN ============ -->
-<section id="view-picker" class="view">
-  <div class="login-shell">
-    <div class="login-card">
-      <div class="letterhead">
-        <div class="seal">PS</div>
-        <div class="title-block">
-          <div class="kop-line1">Sistem Pelaporan &amp; Pengawasan Sekolah</div>
-          <h1>Pilih Akun</h1>
-        </div>
-      </div>
-
-      <p style="color:var(--ink-soft); font-size:13.5px; margin-top:-8px; margin-bottom:20px;">
-        Tidak perlu masuk dengan kata sandi. Pilih peran dan nama akun untuk langsung membuka dashboard.
-      </p>
-
-      <div class="role-grid" id="roleToggle">
-        <button type="button" data-role="sekolah" class="active">Pihak Sekolah</button>
-        <button type="button" data-role="pengawas">Pengawas Sekolah</button>
-        <button type="button" data-role="ekskul">Organisasi Ekstrakurikuler</button>
-        <button type="button" data-role="wakasek">Wakasek Kesiswaan</button>
-      </div>
-
-      <form id="accountForm">
-        <div class="field">
-          <label for="accountSelect" id="accountLabel">Pilih Sekolah</label>
-          <select id="accountSelect" required></select>
-        </div>
-        <button type="submit" class="btn btn-primary">Buka Dashboard</button>
-      </form>
+<!-- ======================= LOGIN SCREEN ======================= -->
+<section id="login-screen" class="login-wrap">
+  <div class="login-brand">
+    <div class="seal seal-giant" aria-hidden="true">SMA</div>
+    <div class="eyebrow">Sistem Informasi Manajemen</div>
+    <h1 id="brand-title">Portal Manajemen<br>SMA Negeri 1 Harapan Bangsa</h1>
+    <p>Satu portal untuk seluruh unsur pimpinan dan pengelola kesiswaan sekolah — setiap peran memiliki dashboard kerja masing-masing, dan dipantau langsung oleh Kepala Sekolah &amp; Pengawas Sekolah.</p>
+    <div class="brand-roles">
+      <span>Pengawas Sekolah</span>
+      <span>Kepala Sekolah</span>
+      <span>Guru BK</span>
+      <span>Wakasek Kesiswaan</span>
+      <span>Wakasek Kurikulum</span>
+      <span>Wakasek Humas</span>
+      <span>Wakasek Sarpras</span>
+      <span>Tata Usaha</span>
     </div>
   </div>
-</section>
-
-<!-- ============ VIEW: DASHBOARD SEKOLAH ============ -->
-<section id="view-sekolah" class="view">
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div>
-        <div class="letterhead">
-          <div class="seal">PS</div>
-          <div class="title-block">
-            <div class="kop-line1">Pelaporan Sekolah</div>
-            <h1>Dashboard Sekolah</h1>
-          </div>
-        </div>
-        <div class="user-card">
-          <div class="name" id="sekolahSidebarNama">—</div>
-          <div class="meta" id="sekolahSidebarNpsn">—</div>
-        </div>
+  <div class="login-form-panel">
+    <form class="login-card" id="login-form" novalidate>
+      <h2>Masuk ke Portal</h2>
+      <p class="sub">Gunakan akun yang telah diberikan sesuai jabatan Anda.</p>
+      <div id="login-error" class="login-error" hidden></div>
+      <div class="field">
+        <label for="login-username">Nama pengguna</label>
+        <input type="text" id="login-username" autocomplete="username" placeholder="contoh: gurubk">
       </div>
-      <div class="sidebar-footer">
-        <button class="btn btn-ghost btn-sm" style="width:100%;" id="sekolahLogoutBtn">Ganti Akun</button>
+      <div class="field">
+        <label for="login-password">Kata sandi</label>
+        <input type="password" id="login-password" autocomplete="current-password" placeholder="••••••••">
       </div>
-    </aside>
-
-    <main class="main">
-      <div class="page-head">
-        <div>
-          <h2 class="display" style="font-size:24px;">Kirim &amp; Pantau Laporan</h2>
-          <p>Kirimkan laporan sekolah kepada pengawas pembina dan pantau status verifikasinya di sini.</p>
-        </div>
+      <button type="submit" class="btn btn-primary">Masuk</button>
+      <div class="demo-hint">
+        <strong>Akun demo</strong> (ubah di <code>data/users.js</code>):<br>
+        <code>gurubk / bk123</code> · <code>wakesis / wakesis123</code> · <code>kurikulum / kurikulum123</code><br>
+        <code>humas / humas123</code> · <code>sarpras / sarpras123</code><br>
+        <code>tu / tu123</code> · <code>kepsek / kepsek123</code> · <code>pengawas / pengawas123</code>
       </div>
-
-      <div class="stat-row" id="sekolahStatRow"></div>
-
-      <section class="panel">
-        <h2>Buat Laporan Baru</h2>
-        <p class="sub">Lengkapi formulir berikut untuk mengirimkan laporan kepada pengawas pembina.</p>
-        <form id="sekolahForm">
-          <div class="form-grid">
-            <div class="field">
-              <label for="sekolahJenis">Jenis Laporan</label>
-              <select id="sekolahJenis" required>
-                <option value="">Pilih jenis laporan</option>
-                <option>Laporan Bulanan</option>
-                <option>Laporan Semester</option>
-                <option>Laporan Kegiatan</option>
-                <option>Laporan Sarana Prasarana</option>
-                <option>Laporan Insidentil</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="sekolahPeriode">Periode</label>
-              <input type="text" id="sekolahPeriode" placeholder="cth. Agustus 2026" required />
-            </div>
-            <div class="field span-2">
-              <label for="sekolahIsi">Isi Laporan</label>
-              <textarea id="sekolahIsi" placeholder="Uraikan kondisi/kegiatan yang dilaporkan..." required></textarea>
-            </div>
-            <div class="field span-2">
-              <label for="sekolahLampiran">Lampiran (opsional, pisahkan dengan koma)</label>
-              <input type="text" id="sekolahLampiran" placeholder="cth. Daftar Hadir.pdf, Dokumentasi.zip" />
-            </div>
-          </div>
-          <button type="submit" class="btn btn-primary" style="margin-top:6px; width:auto; padding-left:24px; padding-right:24px;">Kirim Laporan ke Pengawas</button>
-        </form>
-      </section>
-
-      <section>
-        <h2 style="font-size:17px; margin-bottom:14px;">Riwayat Laporan</h2>
-        <div class="filter-row">
-          <select id="sekolahFilterStatus">
-            <option value="semua">Semua Status</option>
-            <option value="terkirim">Menunggu</option>
-            <option value="diverifikasi">Terverifikasi</option>
-            <option value="perlu_revisi">Perlu Revisi</option>
-          </select>
-        </div>
-        <div class="laporan-list" id="sekolahLaporanList"></div>
-      </section>
-    </main>
+    </form>
   </div>
 </section>
 
-<!-- ============ VIEW: DASHBOARD PENGAWAS ============ -->
-<section id="view-pengawas" class="view">
-  <div class="app-shell">
-    <aside class="sidebar">
+<!-- ======================= DASHBOARD SCREEN ======================= -->
+<div id="dashboard-screen" hidden>
+  <aside id="sidebar">
+    <div class="side-head">
+      <div class="seal seal-sm" aria-hidden="true">SMA</div>
       <div>
-        <div class="letterhead">
-          <div class="seal">PS</div>
-          <div class="title-block">
-            <div class="kop-line1">Pengawasan Sekolah</div>
-            <h1>Dashboard Pengawas</h1>
-          </div>
-        </div>
-        <div class="user-card">
-          <div class="name" id="pengawasSidebarNama">—</div>
-          <div class="meta" id="pengawasSidebarWilayah">—</div>
-        </div>
+        <div class="school-name">SMAN 1 Harapan Bangsa</div>
+        <div class="school-tag">SIM SEKOLAH</div>
       </div>
-      <div class="sidebar-footer">
-        <button class="btn btn-ghost btn-sm" style="width:100%;" id="pengawasLogoutBtn">Ganti Akun</button>
-      </div>
-    </aside>
+    </div>
+    <div class="side-role" id="side-role-box"></div>
+    <nav id="side-nav"></nav>
+    <div class="side-foot">
+      <button class="btn btn-outline" id="logout-btn">Keluar</button>
+    </div>
+  </aside>
 
-    <main class="main">
-      <div class="page-head">
-        <div>
-          <h2 class="display" style="font-size:24px;">Laporan Sekolah Binaan</h2>
-          <p>Tinjau, beri catatan, dan verifikasi laporan yang dikirim oleh sekolah binaan Anda.</p>
+  <div id="main-col">
+    <header id="topbar">
+      <div class="page-title" id="page-title">Ringkasan</div>
+      <div class="who">
+        <div class="meta">
+          <div class="name" id="who-name"></div>
+          <div class="jabatan" id="who-jabatan"></div>
         </div>
+        <div class="seal seal-sm" id="who-seal" aria-hidden="true"></div>
       </div>
-
-      <div class="stat-row" id="pengawasStatRow"></div>
-
-      <section>
-        <div class="filter-row">
-          <select id="pengawasFilterSekolah">
-            <option value="semua">Semua Sekolah</option>
-          </select>
-          <select id="pengawasFilterStatus">
-            <option value="semua">Semua Status</option>
-            <option value="terkirim">Menunggu</option>
-            <option value="diverifikasi">Terverifikasi</option>
-            <option value="perlu_revisi">Perlu Revisi</option>
-          </select>
-        </div>
-        <div class="laporan-list" id="pengawasLaporanList"></div>
-      </section>
-    </main>
+    </header>
+    <main id="content"></main>
   </div>
-</section>
+</div>
 
-<!-- ============ VIEW: DASHBOARD EKSTRAKURIKULER ============ -->
-<section id="view-ekskul" class="view">
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div>
-        <div class="letterhead">
-          <div class="seal">PS</div>
-          <div class="title-block">
-            <div class="kop-line1">Organisasi Ekstrakurikuler</div>
-            <h1>Dashboard Ekskul</h1>
-          </div>
+<!-- ===== Data per divisi (dipisah per file agar mudah dikelola masing-masing) ===== -->
+<script src="data/users.js"></script>
+<script src="data/guru-bk.js"></script>
+<script src="data/wakasek-kesiswaan.js"></script>
+<script src="data/kurikulum.js"></script>
+<script src="data/humas.js"></script>
+<script src="data/sarpras.js"></script>
+<script src="data/tata-usaha.js"></script>
+
+<script>
+/* =========================================================
+   APP LOGIC — login, routing antar dashboard, render tabel/form
+   ========================================================= */
+(function(){
+
+  const CONFIG = {
+    schoolName: "SMA Negeri 1 Harapan Bangsa" // ganti nama sekolah di sini
+  };
+
+  const $  = (sel, root) => (root||document).querySelector(sel);
+  const $$ = (sel, root) => Array.from((root||document).querySelectorAll(sel));
+
+  function escapeHtml(str){
+    return String(str==null?"":str).replace(/[&<>"']/g, s => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[s]));
+  }
+
+  function fmtDate(iso){
+    if(!iso) return "-";
+    const d = new Date(iso+"T00:00:00");
+    if(isNaN(d)) return iso;
+    return d.toLocaleDateString("id-ID", {day:"2-digit", month:"short", year:"numeric"});
+  }
+
+  function badgeClass(status){
+    const s = String(status||"").toLowerCase();
+    if(/(selesai|baik|aktif|juara)/.test(s)) return "badge-green";
+    if(/(proses|perlu perbaikan|diproses|persiapan|menunggu|direncanakan|peringatan|sedang)/.test(s)) return "badge-amber";
+    if(/(berat|rusak|skorsing|tinggi)/.test(s)) return "badge-red";
+    return "badge-gray";
+  }
+  function badge(status){
+    return `<span class="badge ${badgeClass(status)}">${escapeHtml(status)}</span>`;
+  }
+
+  /* ---------------- localStorage layer untuk data tambahan ---------------- */
+  function getExtra(key){
+    try{ return JSON.parse(localStorage.getItem("extra_"+key) || "[]"); }
+    catch(e){ return []; }
+  }
+  function addExtra(key, record){
+    const list = getExtra(key);
+    record._id = Date.now();
+    list.unshift(record);
+    localStorage.setItem("extra_"+key, JSON.stringify(list));
+  }
+  function withExtra(key, base){
+    return getExtra(key).concat(base);
+  }
+
+  /* ---------------- render tabel generik ---------------- */
+  function renderTable(rows, columns){
+    if(!rows || rows.length===0){
+      return `<div class="table-wrap"><div class="empty-state">Belum ada data untuk ditampilkan.</div></div>`;
+    }
+    const thead = columns.map(c=>`<th>${escapeHtml(c.label)}</th>`).join("");
+    const tbody = rows.map(row=>{
+      const tds = columns.map(c=>{
+        let val = row[c.key];
+        if(c.type==="date") return `<td class="cell-date">${fmtDate(val)}</td>`;
+        if(c.type==="status") return `<td>${badge(val)}</td>`;
+        return `<td>${escapeHtml(val)}</td>`;
+      }).join("");
+      return `<tr>${tds}</tr>`;
+    }).join("");
+    return `<div class="table-wrap"><table><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table></div>`;
+  }
+
+  function statCard(num, label){
+    return `<div class="stat-card"><div class="num">${escapeHtml(num)}</div><div class="lbl">${escapeHtml(label)}</div></div>`;
+  }
+
+  function sectionHead(title, hint){
+    return `<div class="section-head"><h3>${escapeHtml(title)}</h3>${hint?`<span class="hint">${escapeHtml(hint)}</span>`:""}</div>`;
+  }
+
+  /* =========================================================
+     KONFIGURASI FORM TAMBAH DATA per-divisi
+     ========================================================= */
+  function addForm(formId, title, fields){
+    const inputs = fields.map(f=>{
+      const cls = f.full ? "full" : "";
+      if(f.type==="select"){
+        const opts = f.options.map(o=>`<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join("");
+        return `<div class="field ${cls}"><label>${escapeHtml(f.label)}</label><select name="${f.name}">${opts}</select></div>`;
+      }
+      if(f.type==="textarea"){
+        return `<div class="field ${cls}"><label>${escapeHtml(f.label)}</label><textarea name="${f.name}" rows="2"></textarea></div>`;
+      }
+      return `<div class="field ${cls}"><label>${escapeHtml(f.label)}</label><input type="${f.type||'text'}" name="${f.name}" ${f.type==='date' ? '' : ''}></div>`;
+    }).join("");
+    return `
+      <details class="add-box">
+        <summary>${escapeHtml(title)}</summary>
+        <div class="add-box-body">
+          <form data-form-id="${formId}">
+            <div class="form-grid">${inputs}</div>
+            <button type="submit" class="btn btn-gold">Simpan data</button>
+          </form>
         </div>
-        <div class="user-card">
-          <div class="name" id="ekskulSidebarNama">—</div>
-          <div class="meta" id="ekskulSidebarSekolah">—</div>
-        </div>
+      </details>`;
+  }
+
+  /* =========================================================
+     REGISTRY FORM: apa yang terjadi saat tiap form disubmit
+     ========================================================= */
+  const FORM_HANDLERS = {
+    "bk-kasus": (data)=>{
+      addExtra("guru_bk_kasus", {
+        tanggal:data.tanggal, siswa:data.siswa, kelas:data.kelas,
+        kategori:data.kategori, uraian:data.uraian,
+        tindakLanjut:data.tindakLanjut, status:data.status
+      });
+    },
+    "kesiswaan-pelanggaran": (data)=>{
+      addExtra("kesiswaan_pelanggaran", {
+        tanggal:data.tanggal, siswa:data.siswa, kelas:data.kelas,
+        jenis:data.jenis, poin:data.poin, status:data.status
+      });
+    },
+    "kesiswaan-prestasi": (data)=>{
+      addExtra("kesiswaan_prestasi", {
+        tanggal:data.tanggal, siswa:data.siswa, kelas:data.kelas,
+        bidang:data.bidang, tingkat:data.tingkat, capaian:data.capaian
+      });
+    },
+    "kurikulum-ujian": (data)=>{
+      addExtra("kurikulum_jadwal", {
+        nama:data.nama, kelas:data.kelas, tanggal:data.tanggal, status:data.status
+      });
+    },
+    "humas-kegiatan": (data)=>{
+      addExtra("humas_kegiatan", {
+        tanggal:data.tanggal, nama:data.nama, lokasi:data.lokasi,
+        pic:data.pic, status:data.status
+      });
+    },
+    "humas-publikasi": (data)=>{
+      addExtra("humas_publikasi", {
+        tanggal:data.tanggal, judul:data.judul, kanal:data.kanal
+      });
+    },
+    "sarpras-pengajuan": (data)=>{
+      addExtra("sarpras_pengajuan", {
+        tanggal:data.tanggal, item:data.item, pemohon:data.pemohon,
+        prioritas:data.prioritas, status:data.status
+      });
+    },
+    "tu-surat-masuk": (data)=>{
+      addExtra("tu_surat_masuk", {
+        tanggal:data.tanggal, nomorSurat:data.nomorSurat, asal:data.asal,
+        perihal:data.perihal, status:data.status
+      });
+    },
+    "tu-surat-keluar": (data)=>{
+      addExtra("tu_surat_keluar", {
+        tanggal:data.tanggal, nomorSurat:data.nomorSurat, tujuan:data.tujuan,
+        perihal:data.perihal, status:data.status
+      });
+    },
+    "tu-administrasi-siswa": (data)=>{
+      addExtra("tu_administrasi_siswa", {
+        tanggal:data.tanggal, siswa:data.siswa, kelas:data.kelas,
+        jenis:data.jenis, keterangan:data.keterangan
+      });
+    },
+    "tu-keuangan": (data)=>{
+      addExtra("tu_keuangan", {
+        tanggal:data.tanggal, siswa:data.siswa, kelas:data.kelas,
+        keterangan:data.keterangan, nominal:data.nominal, status:data.status
+      });
+    },
+    "catatan-pemantauan": (data, user)=>{
+      const list = getExtra("catatan_pemantauan");
+      list.unshift({
+        tanggal:new Date().toISOString().slice(0,10),
+        oleh:user.name, jabatan:ROLE_INFO[user.role].label, isi:data.isi
+      });
+      localStorage.setItem("extra_catatan_pemantauan", JSON.stringify(list));
+    }
+  };
+
+  /* =========================================================
+     DATA GETTERS gabungan (data dasar + tambahan lokal)
+     ========================================================= */
+  const getKasusBK        = ()=> withExtra("guru_bk_kasus", DATA_GURU_BK.kasus);
+  const getPelanggaran    = ()=> withExtra("kesiswaan_pelanggaran", DATA_KESISWAAN.pelanggaran);
+  const getPrestasi       = ()=> withExtra("kesiswaan_prestasi", DATA_KESISWAAN.prestasi);
+  const getJadwalUjian    = ()=> withExtra("kurikulum_jadwal", DATA_KURIKULUM.jadwalUjian);
+  const getKegiatanHumas  = ()=> withExtra("humas_kegiatan", DATA_HUMAS.kegiatan);
+  const getPublikasiHumas = ()=> withExtra("humas_publikasi", DATA_HUMAS.publikasi);
+  const getPengajuanSarpras = ()=> withExtra("sarpras_pengajuan", DATA_SARPRAS.pengajuanPerbaikan);
+  const getCatatanPemantauan = ()=> getExtra("catatan_pemantauan");
+  const getSuratMasuk        = ()=> withExtra("tu_surat_masuk", DATA_TATA_USAHA.suratMasuk);
+  const getSuratKeluar       = ()=> withExtra("tu_surat_keluar", DATA_TATA_USAHA.suratKeluar);
+  const getAdministrasiSiswa = ()=> withExtra("tu_administrasi_siswa", DATA_TATA_USAHA.administrasiSiswa);
+  const getKeuangan          = ()=> withExtra("tu_keuangan", DATA_TATA_USAHA.keuangan);
+
+  /* =========================================================
+     VIEW BUILDERS — satu fungsi per "tab" tiap divisi
+     ========================================================= */
+  const VIEWS = {};
+
+  /* ---------- GURU BK ---------- */
+  VIEWS.bk_ringkasan = ()=>{
+    const kasus = getKasusBK();
+    const selesai = kasus.filter(k=>k.status==="Selesai").length;
+    const proses  = kasus.filter(k=>k.status==="Proses").length;
+    const pantau  = kasus.filter(k=>k.status==="Pemantauan").length;
+    return `
+      <div class="stat-grid">
+        ${statCard(kasus.length, "Total Kasus BK")}
+        ${statCard(selesai, "Kasus Selesai")}
+        ${statCard(proses, "Dalam Proses")}
+        ${statCard(pantau, "Dalam Pemantauan")}
       </div>
-      <div class="sidebar-footer">
-        <button class="btn btn-ghost btn-sm" style="width:100%;" id="ekskulLogoutBtn">Ganti Akun</button>
+      <div class="section">
+        ${sectionHead("Kasus terbaru", "5 kasus paling baru dicatat")}
+        ${renderTable(kasus.slice(0,5), [
+          {key:"tanggal",label:"Tanggal",type:"date"},
+          {key:"siswa",label:"Siswa"},
+          {key:"kelas",label:"Kelas"},
+          {key:"kategori",label:"Kategori"},
+          {key:"status",label:"Status",type:"status"}
+        ])}
+      </div>`;
+  };
+  VIEWS.bk_kasus = ()=>{
+    return `
+      ${addForm("bk-kasus","Tambah catatan kasus BK",[
+        {name:"tanggal",label:"Tanggal",type:"date"},
+        {name:"siswa",label:"Nama siswa"},
+        {name:"kelas",label:"Kelas"},
+        {name:"kategori",label:"Kategori",type:"select",options:["Pelanggaran Ringan","Pelanggaran Sedang","Pelanggaran Berat","Masalah Pribadi","Masalah Keluarga","Akademik","Sosial"]},
+        {name:"tindakLanjut",label:"Tindak lanjut"},
+        {name:"status",label:"Status",type:"select",options:["Proses","Pemantauan","Selesai"]},
+        {name:"uraian",label:"Uraian kasus",type:"textarea",full:true}
+      ])}
+      ${renderTable(getKasusBK(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},
+        {key:"siswa",label:"Siswa"},
+        {key:"kelas",label:"Kelas"},
+        {key:"kategori",label:"Kategori"},
+        {key:"uraian",label:"Uraian"},
+        {key:"tindakLanjut",label:"Tindak Lanjut"},
+        {key:"status",label:"Status",type:"status"}
+      ])}`;
+  };
+  VIEWS.bk_jadwal = ()=> renderTable(DATA_GURU_BK.jadwalKonseling, [
+    {key:"hari",label:"Hari"},{key:"waktu",label:"Waktu"},{key:"agenda",label:"Agenda"}
+  ]);
+
+  /* ---------- WAKASEK KESISWAAN ---------- */
+  VIEWS.kesiswaan_ringkasan = ()=>{
+    const r = DATA_KESISWAAN.ringkasan;
+    return `
+      <div class="stat-grid">
+        ${statCard(r.totalSiswa,"Total Siswa")}
+        ${statCard(getPelanggaran().length,"Catatan Pelanggaran")}
+        ${statCard(getPrestasi().length,"Catatan Prestasi")}
+        ${statCard(r.ekstrakurikulerAktif,"Ekstrakurikuler Aktif")}
       </div>
-    </aside>
-
-    <main class="main">
-      <div class="page-head">
-        <div>
-          <h2 class="display" style="font-size:24px;">Kirim &amp; Pantau Laporan Ekskul</h2>
-          <p>Kirimkan laporan organisasi ekstrakurikuler kepada Wakasek Kesiswaan dan pantau status tinjauannya di sini.</p>
-        </div>
+      <div class="section">
+        ${sectionHead("Pelanggaran terbaru")}
+        ${renderTable(getPelanggaran().slice(0,5), [
+          {key:"tanggal",label:"Tanggal",type:"date"},{key:"siswa",label:"Siswa"},
+          {key:"kelas",label:"Kelas"},{key:"jenis",label:"Jenis"},{key:"status",label:"Status",type:"status"}
+        ])}
       </div>
+      <div class="section">
+        ${sectionHead("Prestasi terbaru")}
+        ${renderTable(getPrestasi().slice(0,5), [
+          {key:"tanggal",label:"Tanggal",type:"date"},{key:"siswa",label:"Siswa"},
+          {key:"bidang",label:"Bidang"},{key:"tingkat",label:"Tingkat"},{key:"capaian",label:"Capaian",type:"status"}
+        ])}
+      </div>`;
+  };
+  VIEWS.kesiswaan_pelanggaran = ()=>`
+      ${addForm("kesiswaan-pelanggaran","Catat pelanggaran siswa",[
+        {name:"tanggal",label:"Tanggal",type:"date"},
+        {name:"siswa",label:"Nama siswa"},
+        {name:"kelas",label:"Kelas"},
+        {name:"jenis",label:"Jenis pelanggaran",full:true},
+        {name:"poin",label:"Poin pelanggaran",type:"number"},
+        {name:"status",label:"Status",type:"select",options:["Peringatan","Ditindaklanjuti","Skorsing"]}
+      ])}
+      ${renderTable(getPelanggaran(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"siswa",label:"Siswa"},{key:"kelas",label:"Kelas"},
+        {key:"jenis",label:"Jenis"},{key:"poin",label:"Poin"},{key:"status",label:"Status",type:"status"}
+      ])}`;
+  VIEWS.kesiswaan_prestasi = ()=>`
+      ${addForm("kesiswaan-prestasi","Catat prestasi siswa",[
+        {name:"tanggal",label:"Tanggal",type:"date"},
+        {name:"siswa",label:"Nama siswa / tim"},
+        {name:"kelas",label:"Kelas"},
+        {name:"bidang",label:"Bidang lomba",full:true},
+        {name:"tingkat",label:"Tingkat",type:"select",options:["Sekolah","Kota","Kabupaten","Provinsi","Nasional","Internasional"]},
+        {name:"capaian",label:"Capaian",type:"select",options:["Juara 1","Juara 2","Juara 3","Harapan 1","Peserta Terbaik"]}
+      ])}
+      ${renderTable(getPrestasi(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"siswa",label:"Siswa"},{key:"kelas",label:"Kelas"},
+        {key:"bidang",label:"Bidang"},{key:"tingkat",label:"Tingkat"},{key:"capaian",label:"Capaian",type:"status"}
+      ])}`;
+  VIEWS.kesiswaan_ekskul = ()=> renderTable(DATA_KESISWAAN.ekstrakurikuler, [
+    {key:"nama",label:"Ekstrakurikuler"},{key:"pembina",label:"Pembina"},
+    {key:"jadwal",label:"Jadwal"},{key:"anggota",label:"Jumlah Anggota"}
+  ]);
 
-      <div class="stat-row" id="ekskulStatRow"></div>
-
-      <section class="panel">
-        <h2>Buat Laporan Baru</h2>
-        <p class="sub">Lengkapi formulir berikut untuk mengirimkan laporan kepada Wakasek Kesiswaan.</p>
-        <form id="ekskulForm">
-          <div class="form-grid">
-            <div class="field">
-              <label for="ekskulJenis">Jenis Laporan</label>
-              <select id="ekskulJenis" required>
-                <option value="">Pilih jenis laporan</option>
-                <option>Laporan Kegiatan</option>
-                <option>Laporan Keanggotaan</option>
-                <option>Laporan Prestasi/Lomba</option>
-                <option>Laporan Keuangan</option>
-                <option>Laporan Insidentil</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="ekskulPeriode">Periode</label>
-              <input type="text" id="ekskulPeriode" placeholder="cth. Agustus 2026" required />
-            </div>
-            <div class="field span-2">
-              <label for="ekskulIsi">Isi Laporan</label>
-              <textarea id="ekskulIsi" placeholder="Uraikan kegiatan/keanggotaan/prestasi yang dilaporkan..." required></textarea>
-            </div>
-            <div class="field span-2">
-              <label for="ekskulLampiran">Lampiran (opsional, pisahkan dengan koma)</label>
-              <input type="text" id="ekskulLampiran" placeholder="cth. Dokumentasi Kegiatan.zip, Daftar Hadir.pdf" />
-            </div>
-          </div>
-          <button type="submit" class="btn btn-primary" style="margin-top:6px; width:auto; padding-left:24px; padding-right:24px;">Kirim Laporan ke Wakasek</button>
-        </form>
-      </section>
-
-      <section>
-        <h2 style="font-size:17px; margin-bottom:14px;">Riwayat Laporan</h2>
-        <div class="filter-row">
-          <select id="ekskulFilterStatus">
-            <option value="semua">Semua Status</option>
-            <option value="terkirim">Menunggu</option>
-            <option value="diverifikasi">Terverifikasi</option>
-            <option value="perlu_revisi">Perlu Revisi</option>
-          </select>
-        </div>
-        <div class="laporan-list" id="ekskulLaporanList"></div>
-      </section>
-    </main>
-  </div>
-</section>
-
-<!-- ============ VIEW: DASHBOARD WAKASEK KESISWAAN ============ -->
-<section id="view-wakasek" class="view">
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div>
-        <div class="letterhead">
-          <div class="seal">PS</div>
-          <div class="title-block">
-            <div class="kop-line1">Wakasek Kesiswaan</div>
-            <h1>Dashboard Kesiswaan</h1>
-          </div>
-        </div>
-        <div class="user-card">
-          <div class="name" id="wakasekSidebarNama">—</div>
-          <div class="meta" id="wakasekSidebarSekolah">—</div>
-        </div>
+  /* ---------- KURIKULUM ---------- */
+  VIEWS.kurikulum_ringkasan = ()=>{
+    const r = DATA_KURIKULUM.ringkasan;
+    return `
+      <div class="stat-grid">
+        ${statCard(r.totalMapel,"Mata Pelajaran")}
+        ${statCard(r.guruAktif,"Guru Aktif")}
+        ${statCard(r.rataCapaianKurikulum,"Rata-rata Capaian")}
+        ${statCard(getJadwalUjian().length,"Agenda Ujian Tercatat")}
       </div>
-      <div class="sidebar-footer">
-        <button class="btn btn-ghost btn-sm" style="width:100%;" id="wakasekLogoutBtn">Ganti Akun</button>
+      <div class="section">
+        ${sectionHead("Agenda ujian terdekat")}
+        ${renderTable(getJadwalUjian().slice(0,5), [
+          {key:"nama",label:"Nama Ujian"},{key:"kelas",label:"Kelas"},
+          {key:"tanggal",label:"Jadwal"},{key:"status",label:"Status",type:"status"}
+        ])}
+      </div>`;
+  };
+  VIEWS.kurikulum_ujian = ()=>`
+      ${addForm("kurikulum-ujian","Tambah agenda ujian / penilaian",[
+        {name:"nama",label:"Nama ujian",full:true},
+        {name:"kelas",label:"Kelas sasaran"},
+        {name:"tanggal",label:"Jadwal (teks bebas)"},
+        {name:"status",label:"Status",type:"select",options:["Direncanakan","Persiapan","Berlangsung","Selesai"]}
+      ])}
+      ${renderTable(getJadwalUjian(), [
+        {key:"nama",label:"Nama Ujian"},{key:"kelas",label:"Kelas"},
+        {key:"tanggal",label:"Jadwal"},{key:"status",label:"Status",type:"status"}
+      ])}`;
+  VIEWS.kurikulum_capaian = ()=> renderTable(DATA_KURIKULUM.capaianKurikulum, [
+    {key:"mapel",label:"Mata Pelajaran"},{key:"kelas",label:"Kelas"},
+    {key:"targetBab",label:"Target Bab"},{key:"tercapai",label:"Tercapai"},{key:"persentase",label:"Persentase",type:"status"}
+  ]);
+  VIEWS.kurikulum_mapel = ()=> renderTable(DATA_KURIKULUM.mataPelajaran, [
+    {key:"nama",label:"Mata Pelajaran"},{key:"rumpun",label:"Rumpun"},{key:"jamPerMinggu",label:"Jam / Minggu"}
+  ]);
+
+  /* ---------- HUMAS ---------- */
+  VIEWS.humas_ringkasan = ()=>{
+    const r = DATA_HUMAS.ringkasan;
+    return `
+      <div class="stat-grid">
+        ${statCard(getKegiatanHumas().length,"Kegiatan Tercatat")}
+        ${statCard(r.mitraAktif,"Mitra Aktif")}
+        ${statCard(getPublikasiHumas().length,"Publikasi Tercatat")}
       </div>
-    </aside>
+      <div class="section">
+        ${sectionHead("Kegiatan terbaru")}
+        ${renderTable(getKegiatanHumas().slice(0,5), [
+          {key:"tanggal",label:"Tanggal",type:"date"},{key:"nama",label:"Kegiatan"},
+          {key:"lokasi",label:"Lokasi"},{key:"status",label:"Status",type:"status"}
+        ])}
+      </div>`;
+  };
+  VIEWS.humas_kegiatan = ()=>`
+      ${addForm("humas-kegiatan","Tambah kegiatan / agenda humas",[
+        {name:"tanggal",label:"Tanggal",type:"date"},
+        {name:"nama",label:"Nama kegiatan",full:true},
+        {name:"lokasi",label:"Lokasi"},
+        {name:"pic",label:"Penanggung jawab"},
+        {name:"status",label:"Status",type:"select",options:["Direncanakan","Berlangsung","Selesai"]}
+      ])}
+      ${renderTable(getKegiatanHumas(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"nama",label:"Kegiatan"},
+        {key:"lokasi",label:"Lokasi"},{key:"pic",label:"PIC"},{key:"status",label:"Status",type:"status"}
+      ])}`;
+  VIEWS.humas_kerjasama = ()=> renderTable(DATA_HUMAS.kerjasama, [
+    {key:"mitra",label:"Mitra"},{key:"bidang",label:"Bidang Kerjasama"},
+    {key:"mulai",label:"Sejak"},{key:"status",label:"Status",type:"status"}
+  ]);
+  VIEWS.humas_publikasi = ()=>`
+      ${addForm("humas-publikasi","Tambah publikasi",[
+        {name:"tanggal",label:"Tanggal",type:"date"},
+        {name:"judul",label:"Judul publikasi",full:true},
+        {name:"kanal",label:"Kanal",type:"select",options:["Website Sekolah","Instagram Sekolah","Instagram & Website","Media Cetak Lokal"]}
+      ])}
+      ${renderTable(getPublikasiHumas(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"judul",label:"Judul"},{key:"kanal",label:"Kanal"}
+      ])}`;
 
-    <main class="main">
-      <div class="page-head">
-        <div>
-          <h2 class="display" style="font-size:24px;">Laporan Organisasi Ekstrakurikuler</h2>
-          <p>Tinjau, beri catatan, dan verifikasi laporan yang dikirim oleh organisasi ekstrakurikuler di sekolah Anda.</p>
-        </div>
+  /* ---------- SARPRAS ---------- */
+  VIEWS.sarpras_ringkasan = ()=>{
+    const r = DATA_SARPRAS.ringkasan;
+    return `
+      <div class="stat-grid">
+        ${statCard(r.totalAset,"Total Aset")}
+        ${statCard(r.kondisiBaik,"Kondisi Baik")}
+        ${statCard(r.perluPerbaikan,"Perlu Perbaikan")}
+        ${statCard(r.rusakBerat,"Rusak Berat")}
       </div>
+      <div class="section">
+        ${sectionHead("Pengajuan perbaikan terbaru")}
+        ${renderTable(getPengajuanSarpras().slice(0,5), [
+          {key:"tanggal",label:"Tanggal",type:"date"},{key:"item",label:"Item"},
+          {key:"prioritas",label:"Prioritas",type:"status"},{key:"status",label:"Status",type:"status"}
+        ])}
+      </div>`;
+  };
+  VIEWS.sarpras_inventaris = ()=> renderTable(DATA_SARPRAS.inventaris, [
+    {key:"nama",label:"Nama Aset"},{key:"jumlah",label:"Jumlah"},
+    {key:"kondisi",label:"Kondisi",type:"status"},{key:"lokasi",label:"Lokasi"}
+  ]);
+  VIEWS.sarpras_pengajuan = ()=>`
+      ${addForm("sarpras-pengajuan","Ajukan perbaikan sarana",[
+        {name:"tanggal",label:"Tanggal",type:"date"},
+        {name:"item",label:"Item / lokasi rusak",full:true},
+        {name:"pemohon",label:"Pemohon"},
+        {name:"prioritas",label:"Prioritas",type:"select",options:["Rendah","Sedang","Tinggi"]},
+        {name:"status",label:"Status",type:"select",options:["Diproses","Menunggu Anggaran","Selesai"]}
+      ])}
+      ${renderTable(getPengajuanSarpras(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"item",label:"Item"},{key:"pemohon",label:"Pemohon"},
+        {key:"prioritas",label:"Prioritas",type:"status"},{key:"status",label:"Status",type:"status"}
+      ])}`;
+  VIEWS.sarpras_kondisi = ()=> renderTable(DATA_SARPRAS.kondisiRuang, [
+    {key:"ruang",label:"Ruang / Fasilitas"},{key:"kondisi",label:"Kondisi",type:"status"},{key:"catatan",label:"Catatan"}
+  ]);
 
-      <div class="stat-row" id="wakasekStatRow"></div>
+  /* ---------- TATA USAHA ---------- */
+  VIEWS.tu_ringkasan = ()=>{
+    const r = DATA_TATA_USAHA.ringkasan;
+    return `
+      <div class="stat-grid">
+        ${statCard(r.siswaAktif,"Siswa Aktif")}
+        ${statCard(getSuratMasuk().length,"Surat Masuk Tercatat")}
+        ${statCard(getSuratKeluar().length,"Surat Keluar Tercatat")}
+        ${statCard(getKeuangan().length,"Catatan Pembayaran")}
+      </div>
+      <div class="section">
+        ${sectionHead("Surat masuk terbaru")}
+        ${renderTable(getSuratMasuk().slice(0,5), [
+          {key:"tanggal",label:"Tanggal",type:"date"},{key:"nomorSurat",label:"No. Surat"},
+          {key:"asal",label:"Asal"},{key:"perihal",label:"Perihal"},{key:"status",label:"Status",type:"status"}
+        ])}
+      </div>
+      <div class="section">
+        ${sectionHead("Status pembayaran terbaru")}
+        ${renderTable(getKeuangan().slice(0,5), [
+          {key:"tanggal",label:"Tanggal",type:"date"},{key:"siswa",label:"Siswa"},
+          {key:"keterangan",label:"Keterangan"},{key:"nominal",label:"Nominal"},{key:"status",label:"Status",type:"status"}
+        ])}
+      </div>`;
+  };
+  VIEWS.tu_surat_masuk = ()=>`
+      ${addForm("tu-surat-masuk","Catat surat masuk",[
+        {name:"tanggal",label:"Tanggal",type:"date"},
+        {name:"nomorSurat",label:"Nomor surat"},
+        {name:"asal",label:"Asal surat"},
+        {name:"perihal",label:"Perihal",full:true},
+        {name:"status",label:"Status",type:"select",options:["Menunggu Disposisi","Diproses","Diarsipkan"]}
+      ])}
+      ${renderTable(getSuratMasuk(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"nomorSurat",label:"No. Surat"},
+        {key:"asal",label:"Asal"},{key:"perihal",label:"Perihal"},{key:"status",label:"Status",type:"status"}
+      ])}`;
+  VIEWS.tu_surat_keluar = ()=>`
+      ${addForm("tu-surat-keluar","Catat surat keluar",[
+        {name:"tanggal",label:"Tanggal",type:"date"},
+        {name:"nomorSurat",label:"Nomor surat"},
+        {name:"tujuan",label:"Tujuan surat"},
+        {name:"perihal",label:"Perihal",full:true},
+        {name:"status",label:"Status",type:"select",options:["Draft","Terkirim"]}
+      ])}
+      ${renderTable(getSuratKeluar(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"nomorSurat",label:"No. Surat"},
+        {key:"tujuan",label:"Tujuan"},{key:"perihal",label:"Perihal"},{key:"status",label:"Status",type:"status"}
+      ])}`;
+  VIEWS.tu_administrasi = ()=>`
+      ${addForm("tu-administrasi-siswa","Catat administrasi siswa",[
+        {name:"tanggal",label:"Tanggal",type:"date"},
+        {name:"siswa",label:"Nama siswa"},
+        {name:"kelas",label:"Kelas"},
+        {name:"jenis",label:"Jenis",type:"select",options:["Siswa Baru","Mutasi Masuk","Mutasi Keluar","Update Data"]},
+        {name:"keterangan",label:"Keterangan",type:"textarea",full:true}
+      ])}
+      ${renderTable(getAdministrasiSiswa(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"siswa",label:"Siswa"},{key:"kelas",label:"Kelas"},
+        {key:"jenis",label:"Jenis",type:"status"},{key:"keterangan",label:"Keterangan"}
+      ])}`;
+  VIEWS.tu_keuangan = ()=>`
+      ${addForm("tu-keuangan","Catat pembayaran / transaksi",[
+        {name:"tanggal",label:"Tanggal",type:"date"},
+        {name:"siswa",label:"Nama siswa"},
+        {name:"kelas",label:"Kelas"},
+        {name:"keterangan",label:"Keterangan pembayaran",full:true},
+        {name:"nominal",label:"Nominal (contoh: Rp 350.000)"},
+        {name:"status",label:"Status",type:"select",options:["Lunas","Cicilan","Belum Lunas"]}
+      ])}
+      ${renderTable(getKeuangan(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"siswa",label:"Siswa"},{key:"kelas",label:"Kelas"},
+        {key:"keterangan",label:"Keterangan"},{key:"nominal",label:"Nominal"},{key:"status",label:"Status",type:"status"}
+      ])}`;
 
-      <section>
-        <div class="filter-row">
-          <select id="wakasekFilterEkskul">
-            <option value="semua">Semua Organisasi</option>
-          </select>
-          <select id="wakasekFilterStatus">
-            <option value="semua">Semua Status</option>
-            <option value="terkirim">Menunggu</option>
-            <option value="diverifikasi">Terverifikasi</option>
-            <option value="perlu_revisi">Perlu Revisi</option>
-          </select>
-        </div>
-        <div class="laporan-list" id="wakasekLaporanList"></div>
-      </section>
-    </main>
-  </div>
-</section>
+  /* ---------- MONITORING (Kepala Sekolah & Pengawas) ---------- */
+  VIEWS.monitor_ringkasan = ()=>{
+    return `
+      <div class="stat-grid">
+        ${statCard(getKasusBK().length,"Kasus BK")}
+        ${statCard(getPelanggaran().length,"Pelanggaran Siswa")}
+        ${statCard(getPrestasi().length,"Prestasi Siswa")}
+        ${statCard(getJadwalUjian().length,"Agenda Ujian")}
+        ${statCard(getKegiatanHumas().length,"Kegiatan Humas")}
+        ${statCard(getPengajuanSarpras().length,"Pengajuan Sarpras")}
+        ${statCard(getSuratMasuk().length + getSuratKeluar().length,"Surat Tata Usaha")}
+      </div>
+      <div class="section">
+        ${sectionHead("Ringkasan lintas divisi","Dipantau oleh Kepala Sekolah & Pengawas Sekolah")}
+        <div class="table-wrap"><table><thead><tr>
+          <th>Divisi</th><th>Indikator</th><th>Catatan</th>
+        </tr></thead><tbody>
+          <tr><td><span class="role-chip" style="background:${ROLE_INFO.guru_bk.color}22;color:${ROLE_INFO.guru_bk.color}">Guru BK</span></td>
+              <td>${getKasusBK().filter(k=>k.status!=='Selesai').length} kasus masih berjalan</td>
+              <td>Lihat tab "Guru BK" untuk rincian kasus.</td></tr>
+          <tr><td><span class="role-chip" style="background:${ROLE_INFO.wakasek_kesiswaan.color}22;color:${ROLE_INFO.wakasek_kesiswaan.color}">Kesiswaan</span></td>
+              <td>${getPelanggaran().length} pelanggaran, ${getPrestasi().length} prestasi</td>
+              <td>Lihat tab "Kesiswaan" untuk rincian.</td></tr>
+          <tr><td><span class="role-chip" style="background:${ROLE_INFO.kurikulum.color}22;color:${ROLE_INFO.kurikulum.color}">Kurikulum</span></td>
+              <td>Rata-rata capaian ${DATA_KURIKULUM.ringkasan.rataCapaianKurikulum}</td>
+              <td>Lihat tab "Kurikulum" untuk rincian.</td></tr>
+          <tr><td><span class="role-chip" style="background:${ROLE_INFO.humas.color}22;color:${ROLE_INFO.humas.color}">Humas</span></td>
+              <td>${getKegiatanHumas().length} kegiatan, ${DATA_HUMAS.ringkasan.mitraAktif} mitra aktif</td>
+              <td>Lihat tab "Humas" untuk rincian.</td></tr>
+          <tr><td><span class="role-chip" style="background:${ROLE_INFO.sarpras.color}22;color:${ROLE_INFO.sarpras.color}">Sarpras</span></td>
+              <td>${DATA_SARPRAS.ringkasan.perluPerbaikan} aset perlu perbaikan</td>
+              <td>Lihat tab "Sarpras" untuk rincian.</td></tr>
+          <tr><td><span class="role-chip" style="background:${ROLE_INFO.tata_usaha.color}22;color:${ROLE_INFO.tata_usaha.color}">Tata Usaha</span></td>
+              <td>${getSuratMasuk().length} surat masuk, ${getKeuangan().filter(k=>k.status!=='Lunas').length} pembayaran belum lunas</td>
+              <td>Lihat tab "Tata Usaha" untuk rincian.</td></tr>
+        </tbody></table></div>
+      </div>`;
+  };
+  VIEWS.monitor_bk        = VIEWS.bk_kasus;
+  VIEWS.monitor_kesiswaan = ()=> `
+      ${sectionHead("Pelanggaran siswa")}
+      ${renderTable(getPelanggaran(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"siswa",label:"Siswa"},{key:"kelas",label:"Kelas"},
+        {key:"jenis",label:"Jenis"},{key:"status",label:"Status",type:"status"}
+      ])}
+      <div style="height:26px"></div>
+      ${sectionHead("Prestasi siswa")}
+      ${renderTable(getPrestasi(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"siswa",label:"Siswa"},
+        {key:"bidang",label:"Bidang"},{key:"capaian",label:"Capaian",type:"status"}
+      ])}`;
+  VIEWS.monitor_kurikulum = ()=> `
+      ${sectionHead("Agenda ujian")}
+      ${renderTable(getJadwalUjian(), [
+        {key:"nama",label:"Nama Ujian"},{key:"kelas",label:"Kelas"},{key:"tanggal",label:"Jadwal"},{key:"status",label:"Status",type:"status"}
+      ])}
+      <div style="height:26px"></div>
+      ${sectionHead("Capaian kurikulum")}
+      ${renderTable(DATA_KURIKULUM.capaianKurikulum, [
+        {key:"mapel",label:"Mapel"},{key:"kelas",label:"Kelas"},{key:"persentase",label:"Capaian",type:"status"}
+      ])}`;
+  VIEWS.monitor_humas = ()=> `
+      ${sectionHead("Kegiatan")}
+      ${renderTable(getKegiatanHumas(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"nama",label:"Kegiatan"},{key:"status",label:"Status",type:"status"}
+      ])}
+      <div style="height:26px"></div>
+      ${sectionHead("Kerjasama mitra")}
+      ${renderTable(DATA_HUMAS.kerjasama, [
+        {key:"mitra",label:"Mitra"},{key:"bidang",label:"Bidang"},{key:"status",label:"Status",type:"status"}
+      ])}`;
+  VIEWS.monitor_sarpras = ()=> `
+      ${sectionHead("Pengajuan perbaikan")}
+      ${renderTable(getPengajuanSarpras(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"item",label:"Item"},
+        {key:"prioritas",label:"Prioritas",type:"status"},{key:"status",label:"Status",type:"status"}
+      ])}
+      <div style="height:26px"></div>
+      ${sectionHead("Kondisi ruang & fasilitas")}
+      ${renderTable(DATA_SARPRAS.kondisiRuang, [
+        {key:"ruang",label:"Ruang"},{key:"kondisi",label:"Kondisi",type:"status"},{key:"catatan",label:"Catatan"}
+      ])}`;
+  VIEWS.monitor_tu = ()=> `
+      ${sectionHead("Surat masuk")}
+      ${renderTable(getSuratMasuk(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"nomorSurat",label:"No. Surat"},
+        {key:"asal",label:"Asal"},{key:"status",label:"Status",type:"status"}
+      ])}
+      <div style="height:26px"></div>
+      ${sectionHead("Surat keluar")}
+      ${renderTable(getSuratKeluar(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"nomorSurat",label:"No. Surat"},
+        {key:"tujuan",label:"Tujuan"},{key:"status",label:"Status",type:"status"}
+      ])}
+      <div style="height:26px"></div>
+      ${sectionHead("Administrasi siswa")}
+      ${renderTable(getAdministrasiSiswa(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"siswa",label:"Siswa"},
+        {key:"jenis",label:"Jenis",type:"status"},{key:"keterangan",label:"Keterangan"}
+      ])}
+      <div style="height:26px"></div>
+      ${sectionHead("Keuangan / pembayaran siswa")}
+      ${renderTable(getKeuangan(), [
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"siswa",label:"Siswa"},
+        {key:"keterangan",label:"Keterangan"},{key:"nominal",label:"Nominal"},{key:"status",label:"Status",type:"status"}
+      ])}`;
+  VIEWS.monitor_catatan = ()=>{
+    const notes = getCatatanPemantauan();
+    const notesHtml = notes.length===0
+      ? `<div class="empty-state">Belum ada catatan pemantauan.</div>`
+      : notes.map(n=>`
+          <div class="note-item">
+            <div class="note-meta"><strong>${escapeHtml(n.oleh)}</strong> — ${escapeHtml(n.jabatan)} · ${fmtDate(n.tanggal)}</div>
+            <div>${escapeHtml(n.isi)}</div>
+          </div>`).join("");
+    return `
+      ${addForm("catatan-pemantauan","Tambah catatan pemantauan",[
+        {name:"isi",label:"Catatan / arahan pembinaan",type:"textarea",full:true}
+      ])}
+      ${notesHtml}`;
+  };
 
-<div class="toast" id="toast"></div>
+  /* =========================================================
+     KONFIGURASI MENU per-role
+     ========================================================= */
+  const ROUTE_CONFIG = {
+    guru_bk: [
+      {id:"bk_ringkasan", label:"Ringkasan", title:"Ringkasan Guru BK"},
+      {id:"bk_kasus", label:"Kasus BK", title:"Data Kasus Bimbingan Konseling"},
+      {id:"bk_jadwal", label:"Jadwal Konseling", title:"Jadwal Konseling"}
+    ],
+    wakasek_kesiswaan: [
+      {id:"kesiswaan_ringkasan", label:"Ringkasan", title:"Ringkasan Kesiswaan"},
+      {id:"kesiswaan_pelanggaran", label:"Pelanggaran", title:"Pelanggaran Siswa"},
+      {id:"kesiswaan_prestasi", label:"Prestasi", title:"Prestasi Siswa"},
+      {id:"kesiswaan_ekskul", label:"Ekstrakurikuler", title:"Ekstrakurikuler"}
+    ],
+    kurikulum: [
+      {id:"kurikulum_ringkasan", label:"Ringkasan", title:"Ringkasan Kurikulum"},
+      {id:"kurikulum_ujian", label:"Jadwal Ujian", title:"Jadwal Ujian & Penilaian"},
+      {id:"kurikulum_capaian", label:"Capaian Kurikulum", title:"Capaian Kurikulum"},
+      {id:"kurikulum_mapel", label:"Mata Pelajaran", title:"Daftar Mata Pelajaran"}
+    ],
+    humas: [
+      {id:"humas_ringkasan", label:"Ringkasan", title:"Ringkasan Humas"},
+      {id:"humas_kegiatan", label:"Kegiatan", title:"Kegiatan & Agenda Humas"},
+      {id:"humas_kerjasama", label:"Kerjasama", title:"Kerjasama Mitra"},
+      {id:"humas_publikasi", label:"Publikasi", title:"Publikasi"}
+    ],
+    sarpras: [
+      {id:"sarpras_ringkasan", label:"Ringkasan", title:"Ringkasan Sarana Prasarana"},
+      {id:"sarpras_inventaris", label:"Inventaris", title:"Inventaris Aset"},
+      {id:"sarpras_pengajuan", label:"Pengajuan Perbaikan", title:"Pengajuan Perbaikan"},
+      {id:"sarpras_kondisi", label:"Kondisi Ruang", title:"Kondisi Ruang & Fasilitas"}
+    ],
+    tata_usaha: [
+      {id:"tu_ringkasan", label:"Ringkasan", title:"Ringkasan Tata Usaha"},
+      {id:"tu_surat_masuk", label:"Surat Masuk", title:"Surat Masuk"},
+      {id:"tu_surat_keluar", label:"Surat Keluar", title:"Surat Keluar"},
+      {id:"tu_administrasi", label:"Administrasi Siswa", title:"Administrasi Siswa"},
+      {id:"tu_keuangan", label:"Keuangan", title:"Keuangan / Pembayaran Siswa"}
+    ],
+    kepala_sekolah: [
+      {id:"monitor_ringkasan", label:"Ringkasan Umum", title:"Ringkasan Umum Sekolah"},
+      {id:"monitor_bk", label:"Guru BK", title:"Pemantauan — Guru BK"},
+      {id:"monitor_kesiswaan", label:"Kesiswaan", title:"Pemantauan — Kesiswaan"},
+      {id:"monitor_kurikulum", label:"Kurikulum", title:"Pemantauan — Kurikulum"},
+      {id:"monitor_humas", label:"Humas", title:"Pemantauan — Humas"},
+      {id:"monitor_sarpras", label:"Sarpras", title:"Pemantauan — Sarpras"},
+      {id:"monitor_tu", label:"Tata Usaha", title:"Pemantauan — Tata Usaha"},
+      {id:"monitor_catatan", label:"Catatan Pemantauan", title:"Catatan Pemantauan"}
+    ]
+  };
+  ROUTE_CONFIG.pengawas = ROUTE_CONFIG.kepala_sekolah;
 
-<script src="js/data.js"></script>
-<script src="js/app.js"></script>
+  /* =========================================================
+     STATE & RENDER UTAMA
+     ========================================================= */
+  let currentUser = null;
+  let currentView = null;
+
+  function findUser(username, password){
+    return USERS.find(u => u.username===username && u.password===password) || null;
+  }
+  function findUserByUsername(username){
+    return USERS.find(u => u.username===username) || null;
+  }
+
+  function showLogin(message){
+    $("#dashboard-screen").hidden = true;
+    $("#login-screen").hidden = false;
+    const errBox = $("#login-error");
+    if(message){ errBox.textContent = message; errBox.hidden = false; }
+    else { errBox.hidden = true; }
+  }
+
+  function showDashboard(user){
+    currentUser = user;
+    const info = ROLE_INFO[user.role];
+    $("#login-screen").hidden = true;
+    $("#dashboard-screen").hidden = false;
+
+    $("#who-name").textContent = user.name;
+    $("#who-jabatan").textContent = user.jabatan;
+    const sealWho = $("#who-seal");
+    sealWho.textContent = info.short;
+    sealWho.style.color = info.color;
+
+    $("#side-role-box").innerHTML = `<strong>${escapeHtml(user.jabatan)}</strong>${escapeHtml(user.name)}`;
+
+    const routes = ROUTE_CONFIG[user.role] || [];
+    $("#side-nav").innerHTML = routes.map(r=>
+      `<button class="nav-item" data-route="${r.id}">${escapeHtml(r.label)}</button>`
+    ).join("");
+
+    renderRoute(routes[0] ? routes[0].id : null);
+  }
+
+  function renderRoute(routeId){
+    if(!currentUser || !routeId) return;
+    currentView = routeId;
+    const routes = ROUTE_CONFIG[currentUser.role] || [];
+    const routeMeta = routes.find(r=>r.id===routeId);
+    $$(".nav-item", $("#side-nav")).forEach(btn=>{
+      btn.classList.toggle("active", btn.dataset.route===routeId);
+    });
+    $("#page-title").textContent = routeMeta ? routeMeta.title : "";
+    const builder = VIEWS[routeId];
+    $("#content").innerHTML = builder ? builder() : `<div class="empty-state">Tampilan belum tersedia.</div>`;
+  }
+
+  /* ---------------- Cek file data ---------------- */
+  // Jika salah satu file di folder data/ gagal dimuat (mis. folder "data"
+  // tidak ikut ter-upload, path salah, atau nama file berubah), variabel di
+  // bawah ini tidak akan ada. Kita cek di awal supaya kegagalan login tidak
+  // terjadi secara diam-diam tanpa pesan apa pun ke pengguna.
+  function checkDataLoaded(){
+    const required = {
+      "USERS (data/users.js)": typeof USERS !== "undefined",
+      "ROLE_INFO (data/users.js)": typeof ROLE_INFO !== "undefined",
+      "DATA_GURU_BK (data/guru-bk.js)": typeof DATA_GURU_BK !== "undefined",
+      "DATA_KESISWAAN (data/wakasek-kesiswaan.js)": typeof DATA_KESISWAAN !== "undefined",
+      "DATA_KURIKULUM (data/kurikulum.js)": typeof DATA_KURIKULUM !== "undefined",
+      "DATA_HUMAS (data/humas.js)": typeof DATA_HUMAS !== "undefined",
+      "DATA_SARPRAS (data/sarpras.js)": typeof DATA_SARPRAS !== "undefined",
+      "DATA_TATA_USAHA (data/tata-usaha.js)": typeof DATA_TATA_USAHA !== "undefined"
+    };
+    const missing = Object.keys(required).filter(k => !required[k]);
+    return missing;
+  }
+
+  /* ---------------- Event bindings ---------------- */
+  $("#login-form").addEventListener("submit", function(e){
+    e.preventDefault();
+
+    const missing = checkDataLoaded();
+    if(missing.length > 0){
+      showLogin(
+        "Gagal memuat data aplikasi: " + missing.join(", ") + ". " +
+        "Pastikan folder \"data\" berada di lokasi yang sama dengan index.html " +
+        "(sebagai folder bertetangga, bukan di dalam folder lain), lalu muat ulang halaman. " +
+        "Jika ini terjadi saat membuka file secara langsung (bukan lewat GitHub Pages/server), " +
+        "coba jalankan lewat server lokal karena sebagian browser memblokir pemuatan file lokal."
+      );
+      return;
+    }
+
+    try{
+      const username = $("#login-username").value.trim();
+      const password = $("#login-password").value;
+      if(!username || !password){
+        showLogin("Mohon isi nama pengguna dan kata sandi.");
+        return;
+      }
+      const user = findUser(username, password);
+      if(!user){
+        showLogin("Username atau kata sandi salah. Silakan coba lagi.");
+        return;
+      }
+      sessionStorage.setItem("sim_sekolah_user", user.username);
+      $("#login-username").value = "";
+      $("#login-password").value = "";
+      showDashboard(user);
+    }catch(err){
+      console.error("Login error:", err);
+      showLogin("Terjadi kesalahan teknis saat memproses login: " + err.message);
+    }
+  });
+
+  $("#side-nav").addEventListener("click", function(e){
+    const btn = e.target.closest(".nav-item");
+    if(!btn) return;
+    renderRoute(btn.dataset.route);
+  });
+
+  $("#logout-btn").addEventListener("click", function(){
+    sessionStorage.removeItem("sim_sekolah_user");
+    currentUser = null;
+    showLogin();
+  });
+
+  // Delegasi submit untuk semua form "tambah data" di dalam konten dashboard
+  $("#content").addEventListener("submit", function(e){
+    const form = e.target.closest("form[data-form-id]");
+    if(!form) return;
+    e.preventDefault();
+    const formId = form.dataset.formId;
+    const handler = FORM_HANDLERS[formId];
+    if(!handler) return;
+    const data = {};
+    Array.from(form.elements).forEach(el=>{
+      if(el.name) data[el.name] = el.value;
+    });
+    handler(data, currentUser);
+    form.reset();
+    const details = form.closest("details");
+    if(details) details.open = false;
+    renderRoute(currentView); // refresh tampilan agar data baru langsung terlihat
+  });
+
+  /* ---------------- Init ---------------- */
+  $("#brand-title").innerHTML = `Portal Manajemen<br>${escapeHtml(CONFIG.schoolName)}`;
+
+  // Peringatan dini kalau file data belum berhasil dimuat, sebelum pengguna
+  // sempat mencoba login dan bingung kenapa tidak terjadi apa-apa.
+  const missingOnLoad = checkDataLoaded();
+  if(missingOnLoad.length > 0){
+    showLogin(
+      "Aplikasi belum bisa memuat data berikut: " + missingOnLoad.join(", ") + ". " +
+      "Pastikan folder \"data\" dan seluruh isinya berada tepat di sebelah index.html."
+    );
+  } else {
+    const savedUsername = sessionStorage.getItem("sim_sekolah_user");
+    const savedUser = savedUsername ? findUserByUsername(savedUsername) : null;
+    if(savedUser){
+      showDashboard(savedUser);
+    } else {
+      showLogin();
+    }
+  }
+
+  // Jaring pengaman terakhir: kalau ada error JS lain yang tidak tertangkap
+  // (misalnya karena file rusak/termodifikasi), tampilkan di layar login
+  // alih-alih diam-diam gagal tanpa penjelasan.
+  window.addEventListener("error", function(e){
+    if(!$("#dashboard-screen").hidden) return; // hanya tampilkan saat di layar login
+    const box = $("#login-error");
+    if(box.hidden){
+      box.hidden = false;
+      box.textContent = "Terjadi kesalahan teknis: " + (e.message || "tidak diketahui") + ". Coba muat ulang halaman.";
+    }
+  });
+
+})();
+</script>
 </body>
 </html>
