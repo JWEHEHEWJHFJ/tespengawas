@@ -9,8 +9,9 @@ login sekolah dengan dashboard berbeda untuk tiap jabatan:
 - Wakasek Humas
 - Wakasek Sarana Prasarana
 - Tata Usaha
-- Kepala Sekolah (memantau semua divisi di atas)
-- Pengawas Sekolah (memantau semua divisi di atas)
+- Organisasi Siswa: OSIS, Pramuka, PMR, Paskibra
+- Kepala Sekolah (memantau semua divisi & organisasi di atas)
+- Pengawas Sekolah (memantau semua divisi & organisasi di atas)
 
 ## Struktur file
 
@@ -23,6 +24,11 @@ data/kurikulum.js              ← data khusus dashboard Wakasek Kurikulum
 data/humas.js                  ← data khusus dashboard Wakasek Humas
 data/sarpras.js                ← data khusus dashboard Wakasek Sarpras
 data/tata-usaha.js             ← data khusus dashboard Tata Usaha
+data/osis.js                   ← data khusus dashboard OSIS
+data/pramuka.js                ← data khusus dashboard Pramuka
+data/pmr.js                    ← data khusus dashboard PMR
+data/paskibra.js               ← data khusus dashboard Paskibra
+data/laporan-organisasi.js     ← daftar organisasi siswa yang dipantau Wakasek Kesiswaan / Kepala Sekolah / Pengawas
 ```
 
 `index.html` memuat kelima file data di atas dengan `<script src="...">`,
@@ -51,6 +57,10 @@ Semua akun didefinisikan di `data/users.js`:
 | humas       | humas123       | Wakasek Humas           |
 | sarpras     | sarpras123     | Wakasek Sarpras         |
 | tu          | tu123          | Tata Usaha              |
+| osis        | osis123        | Ketua OSIS              |
+| pramuka     | pramuka123     | Pradana (Ketua Pramuka) |
+| pmr         | pmr123         | Ketua PMR               |
+| paskibra    | paskibra123    | Komandan Paskibra       |
 | kepsek      | kepsek123      | Kepala Sekolah          |
 | pengawas    | pengawas123    | Pengawas Sekolah        |
 
@@ -65,12 +75,39 @@ bagian `<script>` paling bawah, dan ubah `schoolName`.
 - **Wakasek Humas**: ringkasan, kegiatan (bisa tambah), kerjasama mitra, publikasi (bisa tambah).
 - **Wakasek Sarpras**: ringkasan aset, inventaris, pengajuan perbaikan (bisa tambah), kondisi ruang.
 - **Tata Usaha**: ringkasan, surat masuk (bisa tambah), surat keluar (bisa tambah), administrasi siswa/mutasi (bisa tambah), keuangan & pembayaran siswa (bisa tambah).
-- **Kepala Sekolah & Pengawas Sekolah**: ringkasan lintas semua divisi di atas (read-only) ditambah halaman
+- **OSIS / Pramuka / PMR / Paskibra** (organisasi siswa): setiap organisasi punya dashboard sendiri dengan tab
+  Ringkasan, Anggota/Pengurus (bisa tambah), Program Kerja (bisa tambah), Kegiatan (bisa tambah),
+  Keuangan/Kas organisasi (bisa tambah pemasukan-pengeluaran, saldo dihitung otomatis), dan
+  Laporan Pertanggungjawaban/LPJ (bisa tambah laporan berkala) — inilah bentuk pertanggungjawaban
+  organisasi ke Pembina, Wakasek Kesiswaan, dan pimpinan sekolah.
+- **Kepala Sekolah & Pengawas Sekolah**: ringkasan lintas semua divisi & organisasi di atas (read-only) ditambah halaman
   **Catatan Pemantauan** untuk menuliskan arahan/pembinaan yang tersimpan dan bisa dilihat bersama.
 
 Data baru yang ditambahkan lewat form "+ Tambah ..." langsung ikut muncul di
 dashboard Kepala Sekolah dan Pengawas Sekolah, karena keduanya membaca sumber
 data yang sama.
+
+## Menambah organisasi siswa baru (mis. Rohis, KIR, dsb.)
+
+Karena dashboard organisasi dibangun secara generik dari `data/laporan-organisasi.js`,
+menambah organisasi baru tidak perlu mengubah kode dashboard sama sekali:
+
+1. Buat file baru, misalnya `data/rohis.js`, dengan struktur field yang sama
+   seperti `data/osis.js` (`namaOrganisasi`, `periode`, `pembina`, `anggota`,
+   `programKerja`, `kegiatan`, `keuangan`, `lpj`).
+2. Tambahkan akun login untuk organisasi tersebut di `data/users.js`
+   (isi `role` dengan id organisasi, misalnya `"rohis"`).
+3. Tambahkan tampilan role-nya di `ROLE_INFO` (juga di `data/users.js`).
+4. Tambahkan satu baris entri baru di `ORGANISASI_LIST` pada
+   `data/laporan-organisasi.js`.
+5. Muat file `data/rohis.js` di `index.html` **sebelum**
+   `data/laporan-organisasi.js` (letakkan tag `<script src="data/rohis.js">`
+   di antara file organisasi lain dan file laporan-organisasi.js).
+
+Setelah itu, organisasi baru otomatis punya dashboard lengkap (Ringkasan,
+Anggota, Program Kerja, Kegiatan, Keuangan, LPJ) dan otomatis muncul di
+tab "Laporan Organisasi" milik Wakasek Kesiswaan serta tab "Organisasi Siswa"
+milik Kepala Sekolah/Pengawas Sekolah.
 
 ## ⚠️ Keterbatasan penting (baca sebelum dipakai sungguhan)
 

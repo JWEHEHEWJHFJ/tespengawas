@@ -258,12 +258,16 @@
       <span>Wakasek Humas</span>
       <span>Wakasek Sarpras</span>
       <span>Tata Usaha</span>
+      <span>OSIS</span>
+      <span>Pramuka</span>
+      <span>PMR</span>
+      <span>Paskibra</span>
     </div>
   </div>
   <div class="login-form-panel">
     <form class="login-card" id="login-form" novalidate>
       <h2>Masuk ke Portal</h2>
-      <p class="sub">Gunakan akun yang telah diberikan sesuai jabatan Anda.</p>
+      <p class="sub">Gunakan akun yang telah diberikan sesuai jabatan / organisasi Anda.</p>
       <div id="login-error" class="login-error" hidden></div>
       <div class="field">
         <label for="login-username">Nama pengguna</label>
@@ -275,10 +279,10 @@
       </div>
       <button type="submit" class="btn btn-primary">Masuk</button>
       <div class="demo-hint">
-        <strong>Akun demo</strong> (ubah di <code>data/users.js</code>):<br>
-        <code>gurubk / bk123</code> · <code>wakesis / wakesis123</code> · <code>kurikulum / kurikulum123</code><br>
-        <code>humas / humas123</code> · <code>sarpras / sarpras123</code><br>
-        <code>tu / tu123</code> · <code>kepsek / kepsek123</code> · <code>pengawas / pengawas123</code>
+        <strong>Akun demo</strong> (daftar lengkap & cara ganti ada di <code>README.md</code> dan <code>data/users.js</code>):<br>
+        <code>gurubk / bk123</code> · <code>wakesis / wakesis123</code> · <code>tu / tu123</code><br>
+        <code>osis / osis123</code> · <code>pramuka / pramuka123</code> · <code>pmr / pmr123</code><br>
+        <code>kepsek / kepsek123</code> · <code>pengawas / pengawas123</code>
       </div>
     </form>
   </div>
@@ -324,6 +328,11 @@
 <script src="data/humas.js"></script>
 <script src="data/sarpras.js"></script>
 <script src="data/tata-usaha.js"></script>
+<script src="data/osis.js"></script>
+<script src="data/pramuka.js"></script>
+<script src="data/pmr.js"></script>
+<script src="data/paskibra.js"></script>
+<script src="data/laporan-organisasi.js"></script>
 
 <script>
 /* =========================================================
@@ -349,6 +358,10 @@
     const d = new Date(iso+"T00:00:00");
     if(isNaN(d)) return iso;
     return d.toLocaleDateString("id-ID", {day:"2-digit", month:"short", year:"numeric"});
+  }
+
+  function rupiah(n){
+    return "Rp " + Number(n||0).toLocaleString("id-ID");
   }
 
   function badgeClass(status){
@@ -388,6 +401,7 @@
         let val = row[c.key];
         if(c.type==="date") return `<td class="cell-date">${fmtDate(val)}</td>`;
         if(c.type==="status") return `<td>${badge(val)}</td>`;
+        if(c.type==="currency") return `<td>${rupiah(val)}</td>`;
         return `<td>${escapeHtml(val)}</td>`;
       }).join("");
       return `<tr>${tds}</tr>`;
@@ -1004,6 +1018,198 @@
   ROUTE_CONFIG.pengawas = ROUTE_CONFIG.kepala_sekolah;
 
   /* =========================================================
+     ORGANISASI SISWA (OSIS, Pramuka, PMR, Paskibra, dst.)
+     Dibangun secara generik dari ORGANISASI_LIST (lihat
+     data/laporan-organisasi.js) supaya menambah organisasi baru
+     tidak perlu mengubah kode di bawah ini.
+     ========================================================= */
+  const ORG_GETTERS = {};
+
+  function registerOrgDashboard(cfg){
+    const id = cfg.id;
+    const DATA = cfg.dataVar;
+
+    const getAnggota      = ()=> withExtra(id+"_anggota", DATA.anggota);
+    const getProkja       = ()=> withExtra(id+"_prokja", DATA.programKerja);
+    const getKegiatanOrg  = ()=> withExtra(id+"_kegiatan", DATA.kegiatan);
+    const getKeuanganOrg  = ()=> withExtra(id+"_keuangan", DATA.keuangan);
+    const getLpjOrg       = ()=> withExtra(id+"_lpj", DATA.lpj);
+
+    ORG_GETTERS[id] = { getAnggota, getProkja, getKegiatan:getKegiatanOrg, getKeuangan:getKeuanganOrg, getLpj:getLpjOrg };
+
+    FORM_HANDLERS[id+"-anggota"] = (data)=>{
+      addExtra(id+"_anggota", { nama:data.nama, kelas:data.kelas, jabatan:data.jabatan });
+    };
+    FORM_HANDLERS[id+"-prokja"] = (data)=>{
+      addExtra(id+"_prokja", { nama:data.nama, bidang:data.bidang, target:data.target, capaian:data.capaian, status:data.status });
+    };
+    FORM_HANDLERS[id+"-kegiatan"] = (data)=>{
+      addExtra(id+"_kegiatan", { tanggal:data.tanggal, nama:data.nama, deskripsi:data.deskripsi, status:data.status });
+    };
+    FORM_HANDLERS[id+"-keuangan"] = (data)=>{
+      addExtra(id+"_keuangan", { tanggal:data.tanggal, keterangan:data.keterangan, jenis:data.jenis, nominal:Number(data.nominal)||0 });
+    };
+    FORM_HANDLERS[id+"-lpj"] = (data, user)=>{
+      addExtra(id+"_lpj", {
+        tanggal:new Date().toISOString().slice(0,10),
+        periode:data.periode,
+        disusunOleh: user.name + " (" + user.jabatan + ")",
+        isi:data.isi
+      });
+    };
+
+    VIEWS[id+"_ringkasan"] = ()=>{
+      const anggota = getAnggota(), prokja = getProkja(), kegiatan = getKegiatanOrg(), keu = getKeuanganOrg();
+      const pemasukan = keu.filter(k=>k.jenis==="Pemasukan").reduce((a,b)=>a+Number(b.nominal||0),0);
+      const pengeluaran = keu.filter(k=>k.jenis==="Pengeluaran").reduce((a,b)=>a+Number(b.nominal||0),0);
+      return `
+        <div class="stat-grid">
+          ${statCard(anggota.length,"Anggota Tercatat")}
+          ${statCard(prokja.filter(p=>p.status==="Berjalan").length,"Program Berjalan")}
+          ${statCard(kegiatan.length,"Kegiatan Tercatat")}
+          ${statCard(rupiah(pemasukan-pengeluaran),"Saldo Kas")}
+        </div>
+        <div class="section">
+          ${sectionHead("Program kerja", "Pembina: " + DATA.pembina)}
+          ${renderTable(prokja.slice(0,5), [
+            {key:"nama",label:"Program"},{key:"bidang",label:"Bidang"},{key:"capaian",label:"Capaian"},{key:"status",label:"Status",type:"status"}
+          ])}
+        </div>
+        <div class="section">
+          ${sectionHead("Kegiatan terbaru")}
+          ${renderTable(kegiatan.slice(0,5), [
+            {key:"tanggal",label:"Tanggal",type:"date"},{key:"nama",label:"Kegiatan"},{key:"status",label:"Status",type:"status"}
+          ])}
+        </div>`;
+    };
+
+    VIEWS[id+"_anggota"] = ()=>`
+        ${addForm(id+"-anggota","Tambah anggota / pengurus",[
+          {name:"nama",label:"Nama"},
+          {name:"kelas",label:"Kelas"},
+          {name:"jabatan",label:"Jabatan",full:true}
+        ])}
+        ${renderTable(getAnggota(), [
+          {key:"nama",label:"Nama"},{key:"kelas",label:"Kelas"},{key:"jabatan",label:"Jabatan"}
+        ])}`;
+
+    VIEWS[id+"_prokja"] = ()=>`
+        ${addForm(id+"-prokja","Tambah program kerja",[
+          {name:"nama",label:"Nama program",full:true},
+          {name:"bidang",label:"Bidang"},
+          {name:"target",label:"Target"},
+          {name:"capaian",label:"Capaian saat ini"},
+          {name:"status",label:"Status",type:"select",options:["Belum Mulai","Berjalan","Selesai"]}
+        ])}
+        ${renderTable(getProkja(), [
+          {key:"nama",label:"Program"},{key:"bidang",label:"Bidang"},{key:"target",label:"Target"},
+          {key:"capaian",label:"Capaian"},{key:"status",label:"Status",type:"status"}
+        ])}`;
+
+    VIEWS[id+"_kegiatan"] = ()=>`
+        ${addForm(id+"-kegiatan","Tambah kegiatan",[
+          {name:"tanggal",label:"Tanggal",type:"date"},
+          {name:"nama",label:"Nama kegiatan",full:true},
+          {name:"deskripsi",label:"Deskripsi",type:"textarea",full:true},
+          {name:"status",label:"Status",type:"select",options:["Direncanakan","Berjalan","Selesai"]}
+        ])}
+        ${renderTable(getKegiatanOrg(), [
+          {key:"tanggal",label:"Tanggal",type:"date"},{key:"nama",label:"Kegiatan"},
+          {key:"deskripsi",label:"Deskripsi"},{key:"status",label:"Status",type:"status"}
+        ])}`;
+
+    VIEWS[id+"_keuangan"] = ()=>{
+      const keu = getKeuanganOrg();
+      const pemasukan = keu.filter(k=>k.jenis==="Pemasukan").reduce((a,b)=>a+Number(b.nominal||0),0);
+      const pengeluaran = keu.filter(k=>k.jenis==="Pengeluaran").reduce((a,b)=>a+Number(b.nominal||0),0);
+      return `
+        <div class="stat-grid">
+          ${statCard(rupiah(pemasukan),"Total Pemasukan")}
+          ${statCard(rupiah(pengeluaran),"Total Pengeluaran")}
+          ${statCard(rupiah(pemasukan-pengeluaran),"Saldo Kas Saat Ini")}
+        </div>
+        ${addForm(id+"-keuangan","Catat transaksi kas",[
+          {name:"tanggal",label:"Tanggal",type:"date"},
+          {name:"keterangan",label:"Keterangan",full:true},
+          {name:"jenis",label:"Jenis",type:"select",options:["Pemasukan","Pengeluaran"]},
+          {name:"nominal",label:"Nominal (angka saja, contoh: 150000)",type:"number"}
+        ])}
+        ${renderTable(keu, [
+          {key:"tanggal",label:"Tanggal",type:"date"},{key:"keterangan",label:"Keterangan"},
+          {key:"jenis",label:"Jenis",type:"status"},{key:"nominal",label:"Nominal",type:"currency"}
+        ])}`;
+    };
+
+    VIEWS[id+"_lpj"] = ()=>{
+      const lpj = getLpjOrg();
+      const list = lpj.length===0
+        ? `<div class="empty-state">Belum ada laporan pertanggungjawaban.</div>`
+        : lpj.map(n=>`
+            <div class="note-item">
+              <div class="note-meta"><strong>${escapeHtml(n.disusunOleh)}</strong> — ${escapeHtml(n.periode)} · ${fmtDate(n.tanggal)}</div>
+              <div>${escapeHtml(n.isi)}</div>
+            </div>`).join("");
+      return `
+        ${addForm(id+"-lpj","Tambah laporan pertanggungjawaban (LPJ)",[
+          {name:"periode",label:"Periode laporan (contoh: Minggu ke-3 Agustus 2026)",full:true},
+          {name:"isi",label:"Isi laporan",type:"textarea",full:true}
+        ])}
+        ${list}`;
+    };
+
+    ROUTE_CONFIG[id] = [
+      {id:id+"_ringkasan", label:"Ringkasan", title:"Ringkasan " + cfg.label},
+      {id:id+"_anggota", label:"Anggota", title:"Anggota " + cfg.label},
+      {id:id+"_prokja", label:"Program Kerja", title:"Program Kerja " + cfg.label},
+      {id:id+"_kegiatan", label:"Kegiatan", title:"Kegiatan " + cfg.label},
+      {id:id+"_keuangan", label:"Keuangan / Kas", title:"Keuangan / Kas " + cfg.label},
+      {id:id+"_lpj", label:"Laporan (LPJ)", title:"Laporan Pertanggungjawaban " + cfg.label}
+    ];
+  }
+
+  ORGANISASI_LIST.forEach(registerOrgDashboard);
+
+  /* ---------- Laporan Organisasi (dilihat Wakasek Kesiswaan, Kepala Sekolah, Pengawas) ---------- */
+  VIEWS.kesiswaan_laporan_organisasi = ()=>{
+    return ORGANISASI_LIST.map(org=>{
+      const g = ORG_GETTERS[org.id];
+      const anggota = g.getAnggota(), prokja = g.getProkja(), keu = g.getKeuangan(), lpj = g.getLpj();
+      const pemasukan = keu.filter(k=>k.jenis==="Pemasukan").reduce((a,b)=>a+Number(b.nominal||0),0);
+      const pengeluaran = keu.filter(k=>k.jenis==="Pengeluaran").reduce((a,b)=>a+Number(b.nominal||0),0);
+      const lpjHtml = lpj.length===0
+        ? `<div class="empty-state">Belum ada laporan pertanggungjawaban dari ${escapeHtml(org.label)}.</div>`
+        : lpj.map(n=>`
+            <div class="note-item">
+              <div class="note-meta"><strong>${escapeHtml(n.disusunOleh)}</strong> — ${escapeHtml(n.periode)} · ${fmtDate(n.tanggal)}</div>
+              <div>${escapeHtml(n.isi)}</div>
+            </div>`).join("");
+      return `
+        <div class="section">
+          <div class="section-head">
+            <h3><span class="role-chip" style="background:${org.color}22;color:${org.color}">${escapeHtml(org.label)}</span></h3>
+            <span class="hint">Pembina: ${escapeHtml(org.dataVar.pembina)}</span>
+          </div>
+          <div class="stat-grid">
+            ${statCard(anggota.length,"Anggota")}
+            ${statCard(prokja.filter(p=>p.status==="Berjalan").length,"Program Berjalan")}
+            ${statCard(rupiah(pemasukan-pengeluaran),"Saldo Kas")}
+          </div>
+          ${lpjHtml}
+        </div>`;
+    }).join("");
+  };
+  VIEWS.monitor_organisasi = VIEWS.kesiswaan_laporan_organisasi;
+
+  ROUTE_CONFIG.wakasek_kesiswaan.push(
+    {id:"kesiswaan_laporan_organisasi", label:"Laporan Organisasi", title:"Laporan Organisasi Siswa"}
+  );
+  // Sisipkan sebelum tab "Catatan Pemantauan" (item terakhir) supaya urutan tetap rapi.
+  ROUTE_CONFIG.kepala_sekolah.splice(
+    ROUTE_CONFIG.kepala_sekolah.length - 1, 0,
+    {id:"monitor_organisasi", label:"Organisasi Siswa", title:"Pemantauan — Organisasi Siswa"}
+  );
+
+  /* =========================================================
      STATE & RENDER UTAMA
      ========================================================= */
   let currentUser = null;
@@ -1073,7 +1279,12 @@
       "DATA_KURIKULUM (data/kurikulum.js)": typeof DATA_KURIKULUM !== "undefined",
       "DATA_HUMAS (data/humas.js)": typeof DATA_HUMAS !== "undefined",
       "DATA_SARPRAS (data/sarpras.js)": typeof DATA_SARPRAS !== "undefined",
-      "DATA_TATA_USAHA (data/tata-usaha.js)": typeof DATA_TATA_USAHA !== "undefined"
+      "DATA_TATA_USAHA (data/tata-usaha.js)": typeof DATA_TATA_USAHA !== "undefined",
+      "DATA_OSIS (data/osis.js)": typeof DATA_OSIS !== "undefined",
+      "DATA_PRAMUKA (data/pramuka.js)": typeof DATA_PRAMUKA !== "undefined",
+      "DATA_PMR (data/pmr.js)": typeof DATA_PMR !== "undefined",
+      "DATA_PASKIBRA (data/paskibra.js)": typeof DATA_PASKIBRA !== "undefined",
+      "ORGANISASI_LIST (data/laporan-organisasi.js)": typeof ORGANISASI_LIST !== "undefined"
     };
     const missing = Object.keys(required).filter(k => !required[k]);
     return missing;
