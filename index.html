@@ -215,6 +215,21 @@
   .form-grid .full{grid-column:1/-1;}
   .student-hint{font-size:12px;color:var(--muted);margin-top:5px;min-height:15px;}
   .student-hint.filled{color:var(--green);font-weight:600;}
+  .student-combo{position:relative;}
+  .student-suggestions{
+    position:absolute;z-index:30;top:calc(100% + 4px);left:0;right:0;
+    background:var(--surface);border:1px solid var(--line);border-radius:8px;
+    box-shadow:var(--shadow);max-height:230px;overflow-y:auto;
+  }
+  .student-suggestion-item{
+    padding:9px 12px;cursor:pointer;display:flex;justify-content:space-between;
+    align-items:baseline;gap:10px;font-size:13.5px;border-bottom:1px solid var(--line);
+  }
+  .student-suggestion-item:last-child{border-bottom:none;}
+  .student-suggestion-item:hover{background:var(--surface-2);}
+  .student-suggestion-item .ssi-nama{font-weight:600;color:var(--ink);}
+  .student-suggestion-item .ssi-meta{color:var(--muted);font-size:12px;white-space:nowrap;font-family:var(--font-mono);}
+  .student-suggestion-empty{padding:10px 12px;color:var(--muted);font-size:13px;}
 
   /* ---------- Monitoring notes (kepsek/pengawas) ---------- */
   .note-item{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;}
@@ -457,15 +472,14 @@
     const inputs = fields.map(f=>{
       const cls = f.full ? "full" : "";
       if(f.type==="student-select"){
-        const opts = SISWA_LIST
-          .map(s=>`<option value="${escapeHtml(s.nisn)}">${escapeHtml(s.nama)} — ${escapeHtml(s.kelas)} (${escapeHtml(s.nisn)})</option>`)
-          .join("");
         return `<div class="field ${cls}">
             <label>${escapeHtml(f.label)}</label>
-            <select name="${f.name}" data-role="student-select" required>
-              <option value="">— Pilih siswa —</option>
-              ${opts}
-            </select>
+            <div class="student-combo">
+              <input type="text" data-role="student-search" data-target="${f.name}"
+                     placeholder="Ketik nama atau NISN siswa..." autocomplete="off">
+              <input type="hidden" name="${f.name}" data-role="student-value">
+              <div class="student-suggestions" data-suggestions-for="${f.name}" hidden></div>
+            </div>
             <div class="student-hint" data-hint-for="${f.name}"></div>
           </div>`;
       }
@@ -1408,13 +1422,14 @@
     const handler = FORM_HANDLERS[formId];
     if(!handler) return;
 
-    // Validasi ringan: kalau form punya dropdown pilih siswa, pastikan sudah dipilih
-    const studentSelects = Array.from(form.querySelectorAll('select[data-role="student-select"]'));
-    const emptySelect = studentSelects.find(sel => !sel.value);
-    if(emptySelect){
-      const hint = form.querySelector(`.student-hint[data-hint-for="${emptySelect.name}"]`);
-      if(hint){ hint.textContent = "Mohon pilih siswa terlebih dahulu."; hint.classList.remove("filled"); }
-      emptySelect.focus();
+    // Validasi ringan: kalau form punya kolom pilih siswa, pastikan sudah memilih dari daftar saran
+    const studentValues = Array.from(form.querySelectorAll('input[data-role="student-value"]'));
+    const emptyValue = studentValues.find(inp => !inp.value);
+    if(emptyValue){
+      const hint = form.querySelector(`.student-hint[data-hint-for="${emptyValue.name}"]`);
+      if(hint){ hint.textContent = "Mohon ketik nama/NISN lalu klik salah satu saran siswa yang muncul."; hint.classList.remove("filled"); }
+      const searchInput = form.querySelector(`input[data-role="student-search"][data-target="${emptyValue.name}"]`);
+      if(searchInput) searchInput.focus();
       return;
     }
 
@@ -1429,20 +1444,69 @@
     renderRoute(currentView); // refresh tampilan agar data baru langsung terlihat
   });
 
-  // Saat siswa dipilih dari dropdown, tampilkan konfirmasi kelasnya secara langsung
-  $("#content").addEventListener("change", function(e){
-    const sel = e.target.closest('select[data-role="student-select"]');
-    if(!sel) return;
-    const hint = sel.parentElement.querySelector(`.student-hint[data-hint-for="${sel.name}"]`);
-    if(!hint) return;
-    const siswa = findSiswaByNisn(sel.value);
-    if(siswa){
-      hint.textContent = `Kelas: ${siswa.kelas} · NISN: ${siswa.nisn}`;
-      hint.classList.add("filled");
-    } else {
-      hint.textContent = "";
-      hint.classList.remove("filled");
-    }
+  // Saat mengetik di kolom pencarian siswa: filter SISWA_LIST dan tampilkan
+  // daftar saran di bawah kolom (nama atau NISN yang mengandung teks yang diketik).
+  $("#content").addEventListener("input", function(e){
+    const inp = e.target.closest('input[data-role="student-search"]');
+    if(!inp) return;
+    const targetName = inp.dataset.target;
+    const box = document.querySelector(`.student-suggestions[data-suggestions-for="${targetName}"]`);
+    const hiddenInput = document.querySelector(`input[data-role="student-value"][name="${targetName}"]`);
+    const hint = document.querySelector(`.student-hint[data-hint-for="${targetName}"]`);
+
+    // Selama masih mengetik ulang, anggap pilihan sebelumnya batal sampai
+    // salah satu saran benar-benar diklik lagi.
+    if(hiddenInput) hiddenInput.value = "";
+    if(hint){ hint.textContent = ""; hint.classList.remove("filled"); }
+    if(!box) return;
+
+    const q = inp.value.trim().toLowerCase();
+    if(q.length === 0){ box.innerHTML = ""; box.hidden = true; return; }
+
+    const matches = SISWA_LIST.filter(s =>
+      s.nama.toLowerCase().includes(q) || s.nisn.includes(q)
+    ).slice(0, 8);
+
+    box.innerHTML = matches.length === 0
+      ? `<div class="student-suggestion-empty">Tidak ditemukan siswa yang cocok.</div>`
+      : matches.map(s => `
+          <div class="student-suggestion-item" data-nisn="${escapeHtml(s.nisn)}" data-target="${escapeHtml(targetName)}">
+            <span class="ssi-nama">${escapeHtml(s.nama)}</span>
+            <span class="ssi-meta">${escapeHtml(s.kelas)} · ${escapeHtml(s.nisn)}</span>
+          </div>`).join("");
+    box.hidden = false;
+  });
+
+  // Klik salah satu saran: gunakan "mousedown" (bukan "click") supaya
+  // terpicu SEBELUM kolom teks kehilangan fokus (blur), sehingga saran
+  // tidak keburu hilang duluan sebelum sempat diklik.
+  $("#content").addEventListener("mousedown", function(e){
+    const item = e.target.closest(".student-suggestion-item");
+    if(!item) return;
+    e.preventDefault();
+    const targetName = item.dataset.target;
+    const nisn = item.dataset.nisn;
+    const siswa = findSiswaByNisn(nisn);
+    const hiddenInput = document.querySelector(`input[data-role="student-value"][name="${targetName}"]`);
+    const searchInput = document.querySelector(`input[data-role="student-search"][data-target="${targetName}"]`);
+    const box = document.querySelector(`.student-suggestions[data-suggestions-for="${targetName}"]`);
+    const hint = document.querySelector(`.student-hint[data-hint-for="${targetName}"]`);
+    if(hiddenInput) hiddenInput.value = nisn;
+    if(searchInput && siswa) searchInput.value = `${siswa.nama} — ${siswa.kelas}`;
+    if(box){ box.innerHTML = ""; box.hidden = true; }
+    if(hint && siswa){ hint.textContent = `Kelas: ${siswa.kelas} · NISN: ${siswa.nisn}`; hint.classList.add("filled"); }
+  });
+
+  // Tutup daftar saran kalau pengguna klik/pindah ke luar kolom pencarian
+  // (diberi jeda singkat supaya tidak bentrok dengan event mousedown di atas).
+  $("#content").addEventListener("focusout", function(e){
+    const inp = e.target.closest('input[data-role="student-search"]');
+    if(!inp) return;
+    const targetName = inp.dataset.target;
+    setTimeout(()=>{
+      const box = document.querySelector(`.student-suggestions[data-suggestions-for="${targetName}"]`);
+      if(box) box.hidden = true;
+    }, 120);
   });
 
   /* ---------------- Init ---------------- */
