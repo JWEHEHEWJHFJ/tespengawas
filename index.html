@@ -379,11 +379,32 @@
   }
 
   /* ---------------- Data siswa terpusat (data/siswa.js) ---------------- */
+  // data/siswa.js sekarang hanya berisi teks mentah SISWA_RAW dengan format
+  // "NISN@Nama@Kelas" per entri, dan antar-entri dipisahkan simbol 🚟
+  // (bukan array objek JavaScript, dan bukan baris baru). Kode di bawah
+  // ini mengubah teks tersebut menjadi SISWA_LIST — array objek
+  // {nisn, nama, kelas} yang dipakai oleh seluruh dashboard.
+  let SISWA_LIST = [];
+  if(typeof SISWA_RAW !== "undefined"){
+    SISWA_LIST = SISWA_RAW
+      .split("🚟")
+      .map(entry => entry.trim())
+      .filter(entry => entry.length > 0)
+      .map(entry => {
+        const parts = entry.split("@");
+        return {
+          nisn: (parts[0] || "").trim(),
+          nama: (parts[1] || "").trim(),
+          kelas: (parts[2] || "").trim()
+        };
+      });
+  }
+
   // Dipakai untuk mengisi dropdown "pilih siswa" di form Guru BK,
   // Wakasek Kesiswaan, dan Organisasi Siswa, supaya nama & kelas selalu
   // konsisten dengan data induk dan tidak perlu diketik ulang.
   function findSiswaByNisn(nisn){
-    return (typeof SISWA_LIST !== "undefined" ? SISWA_LIST : []).find(s => s.nisn === nisn) || null;
+    return SISWA_LIST.find(s => s.nisn === nisn) || null;
   }
 
   /* ---------------- localStorage layer untuk data tambahan ---------------- */
@@ -436,7 +457,7 @@
     const inputs = fields.map(f=>{
       const cls = f.full ? "full" : "";
       if(f.type==="student-select"){
-        const opts = (typeof SISWA_LIST !== "undefined" ? SISWA_LIST : [])
+        const opts = SISWA_LIST
           .map(s=>`<option value="${escapeHtml(s.nisn)}">${escapeHtml(s.nama)} — ${escapeHtml(s.kelas)} (${escapeHtml(s.nisn)})</option>`)
           .join("");
         return `<div class="field ${cls}">
@@ -1311,7 +1332,7 @@
     const required = {
       "USERS (data/users.js)": typeof USERS !== "undefined",
       "ROLE_INFO (data/users.js)": typeof ROLE_INFO !== "undefined",
-      "SISWA_LIST (data/siswa.js)": typeof SISWA_LIST !== "undefined",
+      "SISWA_RAW (data/siswa.js)": typeof SISWA_RAW !== "undefined",
       "DATA_GURU_BK (data/guru-bk.js)": typeof DATA_GURU_BK !== "undefined",
       "DATA_KESISWAAN (data/wakasek-kesiswaan.js)": typeof DATA_KESISWAAN !== "undefined",
       "DATA_KURIKULUM (data/kurikulum.js)": typeof DATA_KURIKULUM !== "undefined",
