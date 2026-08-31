@@ -213,6 +213,8 @@
   .add-box-body{padding:4px 18px 18px;border-top:1px solid var(--line);}
   .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:16px 0;}
   .form-grid .full{grid-column:1/-1;}
+  .student-hint{font-size:12px;color:var(--muted);margin-top:5px;min-height:15px;}
+  .student-hint.filled{color:var(--green);font-weight:600;}
 
   /* ---------- Monitoring notes (kepsek/pengawas) ---------- */
   .note-item{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;}
@@ -322,6 +324,7 @@
 
 <!-- ===== Data per divisi (dipisah per file agar mudah dikelola masing-masing) ===== -->
 <script src="data/users.js"></script>
+<script src="data/siswa.js"></script>
 <script src="data/guru-bk.js"></script>
 <script src="data/wakasek-kesiswaan.js"></script>
 <script src="data/kurikulum.js"></script>
@@ -375,6 +378,14 @@
     return `<span class="badge ${badgeClass(status)}">${escapeHtml(status)}</span>`;
   }
 
+  /* ---------------- Data siswa terpusat (data/siswa.js) ---------------- */
+  // Dipakai untuk mengisi dropdown "pilih siswa" di form Guru BK,
+  // Wakasek Kesiswaan, dan Organisasi Siswa, supaya nama & kelas selalu
+  // konsisten dengan data induk dan tidak perlu diketik ulang.
+  function findSiswaByNisn(nisn){
+    return (typeof SISWA_LIST !== "undefined" ? SISWA_LIST : []).find(s => s.nisn === nisn) || null;
+  }
+
   /* ---------------- localStorage layer untuk data tambahan ---------------- */
   function getExtra(key){
     try{ return JSON.parse(localStorage.getItem("extra_"+key) || "[]"); }
@@ -402,7 +413,8 @@
         if(c.type==="date") return `<td class="cell-date">${fmtDate(val)}</td>`;
         if(c.type==="status") return `<td>${badge(val)}</td>`;
         if(c.type==="currency") return `<td>${rupiah(val)}</td>`;
-        return `<td>${escapeHtml(val)}</td>`;
+        const display = (val===undefined || val===null || val==="") ? "–" : escapeHtml(val);
+        return `<td>${display}</td>`;
       }).join("");
       return `<tr>${tds}</tr>`;
     }).join("");
@@ -423,6 +435,19 @@
   function addForm(formId, title, fields){
     const inputs = fields.map(f=>{
       const cls = f.full ? "full" : "";
+      if(f.type==="student-select"){
+        const opts = (typeof SISWA_LIST !== "undefined" ? SISWA_LIST : [])
+          .map(s=>`<option value="${escapeHtml(s.nisn)}">${escapeHtml(s.nama)} — ${escapeHtml(s.kelas)} (${escapeHtml(s.nisn)})</option>`)
+          .join("");
+        return `<div class="field ${cls}">
+            <label>${escapeHtml(f.label)}</label>
+            <select name="${f.name}" data-role="student-select" required>
+              <option value="">— Pilih siswa —</option>
+              ${opts}
+            </select>
+            <div class="student-hint" data-hint-for="${f.name}"></div>
+          </div>`;
+      }
       if(f.type==="select"){
         const opts = f.options.map(o=>`<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join("");
         return `<div class="field ${cls}"><label>${escapeHtml(f.label)}</label><select name="${f.name}">${opts}</select></div>`;
@@ -449,21 +474,30 @@
      ========================================================= */
   const FORM_HANDLERS = {
     "bk-kasus": (data)=>{
+      const siswa = findSiswaByNisn(data.siswaNisn);
       addExtra("guru_bk_kasus", {
-        tanggal:data.tanggal, siswa:data.siswa, kelas:data.kelas,
+        tanggal:data.tanggal, nisn:data.siswaNisn,
+        siswa: siswa ? siswa.nama : "(siswa tidak ditemukan)",
+        kelas: siswa ? siswa.kelas : "-",
         kategori:data.kategori, uraian:data.uraian,
         tindakLanjut:data.tindakLanjut, status:data.status
       });
     },
     "kesiswaan-pelanggaran": (data)=>{
+      const siswa = findSiswaByNisn(data.siswaNisn);
       addExtra("kesiswaan_pelanggaran", {
-        tanggal:data.tanggal, siswa:data.siswa, kelas:data.kelas,
+        tanggal:data.tanggal, nisn:data.siswaNisn,
+        siswa: siswa ? siswa.nama : "(siswa tidak ditemukan)",
+        kelas: siswa ? siswa.kelas : "-",
         jenis:data.jenis, poin:data.poin, status:data.status
       });
     },
     "kesiswaan-prestasi": (data)=>{
+      const siswa = findSiswaByNisn(data.siswaNisn);
       addExtra("kesiswaan_prestasi", {
-        tanggal:data.tanggal, siswa:data.siswa, kelas:data.kelas,
+        tanggal:data.tanggal, nisn:data.siswaNisn,
+        siswa: siswa ? siswa.nama : "(siswa tidak ditemukan)",
+        kelas: siswa ? siswa.kelas : "-",
         bidang:data.bidang, tingkat:data.tingkat, capaian:data.capaian
       });
     },
@@ -572,8 +606,7 @@
     return `
       ${addForm("bk-kasus","Tambah catatan kasus BK",[
         {name:"tanggal",label:"Tanggal",type:"date"},
-        {name:"siswa",label:"Nama siswa"},
-        {name:"kelas",label:"Kelas"},
+        {name:"siswaNisn",label:"Nama Siswa",type:"student-select"},
         {name:"kategori",label:"Kategori",type:"select",options:["Pelanggaran Ringan","Pelanggaran Sedang","Pelanggaran Berat","Masalah Pribadi","Masalah Keluarga","Akademik","Sosial"]},
         {name:"tindakLanjut",label:"Tindak lanjut"},
         {name:"status",label:"Status",type:"select",options:["Proses","Pemantauan","Selesai"]},
@@ -581,6 +614,7 @@
       ])}
       ${renderTable(getKasusBK(), [
         {key:"tanggal",label:"Tanggal",type:"date"},
+        {key:"nisn",label:"NISN"},
         {key:"siswa",label:"Siswa"},
         {key:"kelas",label:"Kelas"},
         {key:"kategori",label:"Kategori"},
@@ -621,27 +655,25 @@
   VIEWS.kesiswaan_pelanggaran = ()=>`
       ${addForm("kesiswaan-pelanggaran","Catat pelanggaran siswa",[
         {name:"tanggal",label:"Tanggal",type:"date"},
-        {name:"siswa",label:"Nama siswa"},
-        {name:"kelas",label:"Kelas"},
+        {name:"siswaNisn",label:"Nama Siswa",type:"student-select"},
         {name:"jenis",label:"Jenis pelanggaran",full:true},
         {name:"poin",label:"Poin pelanggaran",type:"number"},
         {name:"status",label:"Status",type:"select",options:["Peringatan","Ditindaklanjuti","Skorsing"]}
       ])}
       ${renderTable(getPelanggaran(), [
-        {key:"tanggal",label:"Tanggal",type:"date"},{key:"siswa",label:"Siswa"},{key:"kelas",label:"Kelas"},
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"nisn",label:"NISN"},{key:"siswa",label:"Siswa"},{key:"kelas",label:"Kelas"},
         {key:"jenis",label:"Jenis"},{key:"poin",label:"Poin"},{key:"status",label:"Status",type:"status"}
       ])}`;
   VIEWS.kesiswaan_prestasi = ()=>`
       ${addForm("kesiswaan-prestasi","Catat prestasi siswa",[
         {name:"tanggal",label:"Tanggal",type:"date"},
-        {name:"siswa",label:"Nama siswa / tim"},
-        {name:"kelas",label:"Kelas"},
+        {name:"siswaNisn",label:"Nama Siswa / Ketua Tim",type:"student-select"},
         {name:"bidang",label:"Bidang lomba",full:true},
         {name:"tingkat",label:"Tingkat",type:"select",options:["Sekolah","Kota","Kabupaten","Provinsi","Nasional","Internasional"]},
         {name:"capaian",label:"Capaian",type:"select",options:["Juara 1","Juara 2","Juara 3","Harapan 1","Peserta Terbaik"]}
       ])}
       ${renderTable(getPrestasi(), [
-        {key:"tanggal",label:"Tanggal",type:"date"},{key:"siswa",label:"Siswa"},{key:"kelas",label:"Kelas"},
+        {key:"tanggal",label:"Tanggal",type:"date"},{key:"nisn",label:"NISN"},{key:"siswa",label:"Siswa"},{key:"kelas",label:"Kelas"},
         {key:"bidang",label:"Bidang"},{key:"tingkat",label:"Tingkat"},{key:"capaian",label:"Capaian",type:"status"}
       ])}`;
   VIEWS.kesiswaan_ekskul = ()=> renderTable(DATA_KESISWAAN.ekstrakurikuler, [
@@ -1038,7 +1070,13 @@
     ORG_GETTERS[id] = { getAnggota, getProkja, getKegiatan:getKegiatanOrg, getKeuangan:getKeuanganOrg, getLpj:getLpjOrg };
 
     FORM_HANDLERS[id+"-anggota"] = (data)=>{
-      addExtra(id+"_anggota", { nama:data.nama, kelas:data.kelas, jabatan:data.jabatan });
+      const siswa = findSiswaByNisn(data.siswaNisn);
+      addExtra(id+"_anggota", {
+        nisn: data.siswaNisn,
+        nama: siswa ? siswa.nama : "(siswa tidak ditemukan)",
+        kelas: siswa ? siswa.kelas : "-",
+        jabatan: data.jabatan
+      });
     };
     FORM_HANDLERS[id+"-prokja"] = (data)=>{
       addExtra(id+"_prokja", { nama:data.nama, bidang:data.bidang, target:data.target, capaian:data.capaian, status:data.status });
@@ -1085,12 +1123,11 @@
 
     VIEWS[id+"_anggota"] = ()=>`
         ${addForm(id+"-anggota","Tambah anggota / pengurus",[
-          {name:"nama",label:"Nama"},
-          {name:"kelas",label:"Kelas"},
+          {name:"siswaNisn",label:"Nama Siswa",type:"student-select"},
           {name:"jabatan",label:"Jabatan",full:true}
         ])}
         ${renderTable(getAnggota(), [
-          {key:"nama",label:"Nama"},{key:"kelas",label:"Kelas"},{key:"jabatan",label:"Jabatan"}
+          {key:"nisn",label:"NISN"},{key:"nama",label:"Nama"},{key:"kelas",label:"Kelas"},{key:"jabatan",label:"Jabatan"}
         ])}`;
 
     VIEWS[id+"_prokja"] = ()=>`
@@ -1274,6 +1311,7 @@
     const required = {
       "USERS (data/users.js)": typeof USERS !== "undefined",
       "ROLE_INFO (data/users.js)": typeof ROLE_INFO !== "undefined",
+      "SISWA_LIST (data/siswa.js)": typeof SISWA_LIST !== "undefined",
       "DATA_GURU_BK (data/guru-bk.js)": typeof DATA_GURU_BK !== "undefined",
       "DATA_KESISWAAN (data/wakasek-kesiswaan.js)": typeof DATA_KESISWAAN !== "undefined",
       "DATA_KURIKULUM (data/kurikulum.js)": typeof DATA_KURIKULUM !== "undefined",
@@ -1348,6 +1386,17 @@
     const formId = form.dataset.formId;
     const handler = FORM_HANDLERS[formId];
     if(!handler) return;
+
+    // Validasi ringan: kalau form punya dropdown pilih siswa, pastikan sudah dipilih
+    const studentSelects = Array.from(form.querySelectorAll('select[data-role="student-select"]'));
+    const emptySelect = studentSelects.find(sel => !sel.value);
+    if(emptySelect){
+      const hint = form.querySelector(`.student-hint[data-hint-for="${emptySelect.name}"]`);
+      if(hint){ hint.textContent = "Mohon pilih siswa terlebih dahulu."; hint.classList.remove("filled"); }
+      emptySelect.focus();
+      return;
+    }
+
     const data = {};
     Array.from(form.elements).forEach(el=>{
       if(el.name) data[el.name] = el.value;
@@ -1357,6 +1406,22 @@
     const details = form.closest("details");
     if(details) details.open = false;
     renderRoute(currentView); // refresh tampilan agar data baru langsung terlihat
+  });
+
+  // Saat siswa dipilih dari dropdown, tampilkan konfirmasi kelasnya secara langsung
+  $("#content").addEventListener("change", function(e){
+    const sel = e.target.closest('select[data-role="student-select"]');
+    if(!sel) return;
+    const hint = sel.parentElement.querySelector(`.student-hint[data-hint-for="${sel.name}"]`);
+    if(!hint) return;
+    const siswa = findSiswaByNisn(sel.value);
+    if(siswa){
+      hint.textContent = `Kelas: ${siswa.kelas} · NISN: ${siswa.nisn}`;
+      hint.classList.add("filled");
+    } else {
+      hint.textContent = "";
+      hint.classList.remove("filled");
+    }
   });
 
   /* ---------------- Init ---------------- */
