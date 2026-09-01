@@ -212,6 +212,9 @@
   .icon-btn:hover{background:var(--surface);color:var(--ink);border-color:#c7cede;}
   .icon-btn.icon-delete:hover{background:var(--red-bg);color:var(--red);border-color:#f0c9c9;}
   .icon-btn.icon-edit:hover{background:var(--gold-light);color:var(--gold);border-color:var(--gold);}
+  .icon-btn.icon-view:hover{background:var(--gold-light);color:var(--gold);border-color:var(--gold);}
+  .icon-btn.icon-replace:hover{background:var(--amber-bg);color:var(--amber);border-color:#f0dba5;}
+  .icon-btn.icon-download:hover{background:var(--green-bg);color:var(--green);border-color:#c9ecdb;}
 
   /* ---------- Modal (edit data / konfirmasi hapus) ---------- */
   .modal-overlay{
@@ -262,6 +265,16 @@
   .note-item{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;}
   .note-item .note-meta{font-size:12px;color:var(--muted);margin-bottom:6px;font-family:var(--font-mono);}
   .note-item .note-meta strong{color:var(--ink);font-family:var(--font-body);}
+
+  /* ---------- Lampiran (lihat / ganti / unduh) ---------- */
+  .attachment-row{
+    margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  }
+  .attachment-name{font-size:12.5px;color:var(--ink);font-weight:600;flex:1;min-width:120px;}
+  .attachment-name .fname-sub{display:block;font-size:11.5px;color:var(--muted);font-weight:400;font-family:var(--font-mono);margin-top:1px;}
+  .attachment-actions{display:flex;gap:6px;flex-shrink:0;}
+  .attachment-empty{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);}
 
   .role-chip{
     display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
@@ -429,11 +442,18 @@
   const ICON_EDIT = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
   const ICON_DELETE = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`;
   const ICON_DOWNLOAD = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
+  // Ikon baru untuk lampiran: Lihat (mata) & Ganti file (panah berputar).
+  const ICON_VIEW = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  const ICON_REPLACE = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>`;
 
   // Menyimpan referensi baris (beserta konfigurasi field & storage key-nya)
   // yang sedang tampil di layar, supaya tombol edit/hapus tahu data apa
   // yang harus dibuka/dihapus tanpa menaruh seluruh objek di atribut HTML.
   const ROW_REGISTRY = {};
+  // Menyimpan referensi catatan (LPJ / catatan pemantauan dengan lampiran)
+  // yang sedang tampil, supaya tombol "Ganti file" tahu ke storage key +
+  // _id mana perubahan lampiran harus disimpan.
+  const ATTACHMENT_REGISTRY = {};
 
   /* ---------------- Data siswa terpusat (data/siswa.js) ---------------- */
   // data/siswa.js sekarang hanya berisi teks mentah SISWA_RAW dengan format
@@ -484,6 +504,7 @@
     record._id = "x" + Date.now() + Math.random().toString(36).slice(2,7);
     if(opts.append){ list.push(record); } else { list.unshift(record); }
     localStorage.setItem("extra_"+key, JSON.stringify(list));
+    return record._id;
   }
   function getDeletedIds(key){
     try{ return JSON.parse(localStorage.getItem("deleted_"+key) || "[]"); }
@@ -578,6 +599,39 @@
   }
 
   /* =========================================================
+     LAMPIRAN — render blok "Lihat / Ganti file / Unduh" untuk
+     satu catatan (LPJ). Nama file TIDAK lagi berupa link yang
+     bisa diklik; hanya berupa teks, sementara aksinya lewat ikon.
+     ========================================================= */
+  function renderAttachmentBlock(storageKey, note){
+    const lamp = note.lampiran;
+    // Daftarkan catatan ini supaya event handler tombol "Ganti file"
+    // tahu ke storage key + _id mana perubahan harus disimpan.
+    ATTACHMENT_REGISTRY[note._id] = { storageKey, note };
+
+    const inputHtml = `<input type="file" data-role="attachment-replace-input" data-note-id="${escapeHtml(String(note._id))}" hidden
+        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">`;
+
+    if(!lamp || !lamp.dataUrl){
+      return `<div class="attachment-empty">
+          <div class="student-hint" style="margin-bottom:8px;">Belum ada lampiran untuk catatan ini.</div>
+          <button type="button" class="icon-btn icon-replace" data-action="attachment-replace" data-note-id="${escapeHtml(String(note._id))}" title="Unggah lampiran" aria-label="Unggah lampiran">${ICON_REPLACE}</button>
+          ${inputHtml}
+        </div>`;
+    }
+
+    return `<div class="attachment-row">
+        <div class="attachment-name">${escapeHtml(lamp.fileName || "Lampiran")}<span class="fname-sub">Lampiran laporan</span></div>
+        <div class="attachment-actions">
+          <a class="icon-btn icon-view" href="${lamp.dataUrl}" target="_blank" rel="noopener" title="Lihat lampiran" aria-label="Lihat lampiran">${ICON_VIEW}</a>
+          <button type="button" class="icon-btn icon-replace" data-action="attachment-replace" data-note-id="${escapeHtml(String(note._id))}" title="Ganti file lampiran" aria-label="Ganti file lampiran">${ICON_REPLACE}</button>
+          <a class="icon-btn icon-download" href="${lamp.dataUrl}" download="${escapeHtml(lamp.fileName||'lampiran')}" title="Unduh lampiran" aria-label="Unduh lampiran">${ICON_DOWNLOAD}</a>
+          ${inputHtml}
+        </div>
+      </div>`;
+  }
+
+  /* =========================================================
      MODAL: konfirmasi hapus & form edit baris data
      ========================================================= */
   function openModal(html){
@@ -636,7 +690,7 @@
         return `<div class="field ${cls} full">
             <label>${escapeHtml(f.label)}</label>
             <input type="text" value="${row[f.name] && row[f.name].fileName ? escapeHtml(row[f.name].fileName) : 'Tidak ada lampiran'}" disabled>
-            <div class="student-hint">Lampiran tidak dapat diganti lewat form edit — hapus &amp; tambahkan ulang jika perlu mengganti file.</div>
+            <div class="student-hint">Lampiran tidak dapat diganti lewat form edit — gunakan ikon "Ganti file" pada daftar untuk mengganti lampiran.</div>
           </div>`;
       }
       return `<div class="field ${cls}"><label>${escapeHtml(f.label)}</label><input type="${f.type||'text'}" name="${f.name}" value="${escapeHtml(currentVal)}"></div>`;
@@ -1442,12 +1496,7 @@
             <div class="note-item">
               <div class="note-meta"><strong>${escapeHtml(n.disusunOleh)}</strong> — ${escapeHtml(n.periode)} · ${fmtDate(n.tanggal)}</div>
               <div>${escapeHtml(n.isi)}</div>
-              ${n.lampiran && n.lampiran.dataUrl ? `
-                <div style="margin-top:10px;">
-                  <a class="btn btn-outline" style="width:auto;" href="${n.lampiran.dataUrl}" download="${escapeHtml(n.lampiran.fileName||'lampiran')}">
-                    ${ICON_DOWNLOAD} ${escapeHtml(n.lampiran.fileName||'Unduh lampiran')}
-                  </a>
-                </div>` : ""}
+              ${renderAttachmentBlock(id+"_lpj", n)}
             </div>`).join("");
       return `
         ${addForm(id+"-lpj","Tambah laporan pertanggungjawaban (LPJ)",[
@@ -1508,12 +1557,7 @@
             <div class="note-item">
               <div class="note-meta"><strong>${escapeHtml(n.disusunOleh)}</strong> — ${escapeHtml(n.periode)} · ${fmtDate(n.tanggal)}</div>
               <div>${escapeHtml(n.isi)}</div>
-              ${n.lampiran && n.lampiran.dataUrl ? `
-                <div style="margin-top:10px;">
-                  <a class="btn btn-outline" style="width:auto;" href="${n.lampiran.dataUrl}" download="${escapeHtml(n.lampiran.fileName||'lampiran')}">
-                    ${ICON_DOWNLOAD} ${escapeHtml(n.lampiran.fileName||'Unduh lampiran')}
-                  </a>
-                </div>` : ""}
+              ${renderAttachmentBlock(org.id+"_lpj", n)}
             </div>`).join("");
       return `
         <div class="section">
@@ -1778,13 +1822,56 @@
 
   // Klik tombol edit / hapus pada baris tabel (kolom "Aksi")
   $("#content").addEventListener("click", function(e){
-    const btn = e.target.closest(".icon-btn");
+    const btn = e.target.closest(".icon-btn[data-action]");
     if(!btn) return;
-    const id = btn.dataset.id;
-    const entry = ROW_REGISTRY[id];
+    const action = btn.dataset.action;
+    if(action === "edit" || action === "delete"){
+      const id = btn.dataset.id;
+      const entry = ROW_REGISTRY[id];
+      if(!entry) return;
+      if(action === "edit") openEditModal(entry);
+      else openDeleteModal(entry);
+      return;
+    }
+    if(action === "attachment-replace"){
+      const noteId = btn.dataset.noteId;
+      const input = $(`input[data-role="attachment-replace-input"][data-note-id="${CSS.escape(noteId)}"]`, btn.closest(".attachment-row, .attachment-empty"));
+      if(input) input.click();
+    }
+  });
+
+  // Saat file baru dipilih lewat ikon "Ganti file": baca sebagai base64,
+  // simpan sebagai override lampiran untuk catatan tersebut, lalu refresh.
+  $("#content").addEventListener("change", function(e){
+    const input = e.target.closest('input[data-role="attachment-replace-input"]');
+    if(!input || !input.files || !input.files[0]) return;
+    const file = input.files[0];
+    const noteId = input.dataset.noteId;
+    const entry = ATTACHMENT_REGISTRY[noteId];
     if(!entry) return;
-    if(btn.dataset.action === "edit") openEditModal(entry);
-    else if(btn.dataset.action === "delete") openDeleteModal(entry);
+
+    if(!/\.(pdf|docx?|DOCX?|PDF)$/i.test(file.name)){
+      alert('File "' + file.name + '" bukan format PDF atau Word (.doc/.docx). Silakan pilih file lain.');
+      input.value = "";
+      return;
+    }
+    const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 MB
+    if(file.size > MAX_FILE_SIZE){
+      alert('File "' + file.name + '" berukuran lebih dari 4 MB. Silakan unggah file yang lebih kecil.');
+      input.value = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(){
+      saveEditOverride(entry.storageKey, noteId, {
+        lampiran: { fileName: file.name, fileType: file.type, dataUrl: reader.result }
+      });
+      renderRoute(currentView);
+    };
+    reader.onerror = function(){
+      alert('Gagal membaca file "' + file.name + '".');
+    };
+    reader.readAsDataURL(file);
   });
 
   // Modal: tutup lewat tombol "Batal", klik area gelap di luar kotak modal,
