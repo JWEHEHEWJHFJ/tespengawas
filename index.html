@@ -125,11 +125,11 @@
   /* ---------- Dashboard shell ---------- */
   #dashboard-screen{display:flex;min-height:100vh;}
   #sidebar{
-  width:252px;flex-shrink:0;background:var(--navy-dark);color:#fff;
-  display:flex;flex-direction:column;
-  position:sticky;top:0;align-self:flex-start;
-  height:100vh;overflow-y:auto;
-}
+    width:252px;flex-shrink:0;background:var(--navy-dark);color:#fff;
+    display:flex;flex-direction:column;
+    position:sticky;top:0;align-self:flex-start;
+    height:100vh;overflow-y:auto;
+  }
   .side-head{padding:24px 20px;display:flex;gap:12px;align-items:center;border-bottom:1px solid rgba(255,255,255,.08);}
   .side-head .school-name{font-family:var(--font-display);font-size:15px;line-height:1.25;}
   .side-head .school-tag{font-size:11px;color:rgba(255,255,255,.5);font-family:var(--font-mono);letter-spacing:.05em;}
@@ -287,7 +287,8 @@
     .login-wrap{grid-template-columns:1fr;}
     .login-brand{padding:44px 32px;min-height:260px;}
     #dashboard-screen{flex-direction:column;}
-    #sidebar{width:100%;flex-direction:row;align-items:center;overflow-x:auto;}
+    #sidebar{width:100%;flex-direction:row;align-items:center;overflow-x:auto;
+      height:auto;position:sticky;top:0;z-index:50;}
     .side-head{border-bottom:none;border-right:1px solid rgba(255,255,255,.08);}
     .side-role{display:none;}
     nav#side-nav{flex-direction:row;padding:8px;}
@@ -449,8 +450,8 @@
   const ICON_REPLACE = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>`;
 
   // Menyimpan referensi baris (beserta konfigurasi field & storage key-nya)
-  // yang sedang tampil di layar, supaya tombol edit/hapus tahu data apa
-  // yang harus dibuka/dihapus tanpa menaruh seluruh objek di atribut HTML.
+  // yang sedang tampil di layar, supaya tombol edit/hapus/unduh tahu data apa
+  // yang harus dibuka/dihapus/diunduh tanpa menaruh seluruh objek di atribut HTML.
   const ROW_REGISTRY = {};
   // Menyimpan referensi catatan (LPJ / catatan pemantauan dengan lampiran)
   // yang sedang tampil, supaya tombol "Ganti file" tahu ke storage key +
@@ -557,9 +558,12 @@
   }
 
   /* ---------------- render tabel generik ---------------- */
-  // actionsConfig (opsional): { key, title, fields }
+  // actionsConfig (opsional): { key, title, fields, downloadName }
   // Jika diisi, tabel mendapat kolom "Aksi" di ujung kanan (setelah kolom
   // terakhir, mis. kolom Status) berisi ikon edit & hapus per baris.
+  // Jika actionsConfig.downloadName truthy, ditambahkan juga ikon unduh
+  // (dipakai oleh tabel Ekstrakurikuler/Organisasi untuk mengunduh baris
+  // sebagai file .js tersendiri).
   function renderTable(rows, columns, actionsConfig){
     if(!rows || rows.length===0){
       return `<div class="table-wrap"><div class="empty-state">Belum ada data untuk ditampilkan.</div></div>`;
@@ -582,7 +586,11 @@
           row, key: actionsConfig.key, fields: actionsConfig.fields,
           title: actionsConfig.title || "data ini"
         };
+        const downloadBtn = actionsConfig.downloadName
+          ? `<button type="button" class="icon-btn icon-download" data-action="download-row" data-id="${escapeHtml(String(rowId))}" title="Unduh sebagai file .js" aria-label="Unduh sebagai file .js">${ICON_DOWNLOAD}</button>`
+          : "";
         actionTd = `<td><div class="row-actions">
+            ${downloadBtn}
             <button type="button" class="icon-btn icon-edit" data-action="edit" data-id="${escapeHtml(String(rowId))}" title="Edit data" aria-label="Edit data">${ICON_EDIT}</button>
             <button type="button" class="icon-btn icon-delete" data-action="delete" data-id="${escapeHtml(String(rowId))}" title="Hapus data" aria-label="Hapus data">${ICON_DELETE}</button>
           </div></td>`;
@@ -598,6 +606,53 @@
 
   function sectionHead(title, hint){
     return `<div class="section-head"><h3>${escapeHtml(title)}</h3>${hint?`<span class="hint">${escapeHtml(hint)}</span>`:""}</div>`;
+  }
+
+  /* =========================================================
+     UNDUH DATA EKSTRAKURIKULER/ORGANISASI SEBAGAI FILE .js
+     Dipakai oleh tab "Ekstrakurikuler" (Wakasek Kesiswaan) — setiap
+     organisasi/ekskul bisa diunduh sebagai file JavaScript tersendiri,
+     dengan nama file mengikuti nama organisasinya (mis. "OSIS" ->
+     osis.js), supaya bisa langsung diletakkan/menimpa file di folder
+     data/ jika ingin dijadikan sumber data tetap (bukan localStorage).
+     ========================================================= */
+  // Mengubah nama organisasi menjadi slug aman untuk nama file & nama variabel,
+  // mis. "Karya Ilmiah Remaja" -> "karya-ilmiah-remaja" / "KARYA_ILMIAH_REMAJA"
+  function slugifyFileName(nama){
+    return String(nama||"organisasi")
+      .trim().toLowerCase()
+      .replace(/[^a-z0-9]+/g,"-")
+      .replace(/^-+|-+$/g,"") || "organisasi";
+  }
+  function slugifyVarName(nama){
+    return slugifyFileName(nama).replace(/-/g,"_").toUpperCase() || "ORGANISASI";
+  }
+  function downloadTextFile(fileName, content){
+    const blob = new Blob([content], {type:"text/javascript;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = fileName;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }
+  // Membuat isi file .js berformat "const DATA_XXX = {...};" dari satu
+  // baris data ekstrakurikuler/organisasi, lalu memicu unduhan file
+  // dengan nama file mengikuti nama organisasi tersebut (mis. osis.js).
+  function downloadEkskulAsJs(row){
+    const slugFile = slugifyFileName(row.nama);
+    const varName = "DATA_" + slugifyVarName(row.nama);
+    const obj = {
+      nama: row.nama || "",
+      pembina: row.pembina || "",
+      jadwal: row.jadwal || "",
+      anggota: Number(row.anggota) || 0
+    };
+    const content =
+      `// Data ekstrakurikuler/organisasi: ${row.nama || "-"}\n` +
+      `// File ini dibuat otomatis dari Portal SIM Sekolah.\n` +
+      `// Letakkan sebagai data/${slugFile}.js jika ingin dijadikan sumber data tetap.\n` +
+      `const ${varName} = ${JSON.stringify(obj, null, 2)};\n`;
+    downloadTextFile(slugFile + ".js", content);
   }
 
   /* =========================================================
@@ -720,6 +775,12 @@
       saveEditOverride(entry.key, row._id, patch);
       closeModal();
       renderRoute(currentView);
+      // Untuk tabel Ekstrakurikuler/Organisasi: setelah data diedit dan
+      // disimpan, langsung unduh ulang file .js dengan data terbaru
+      // (nama file mengikuti nama organisasi yang sudah diperbarui).
+      if(entry.key === "kesiswaan_ekskul"){
+        downloadEkskulAsJs(Object.assign({}, row, patch));
+      }
     });
   }
 
@@ -808,6 +869,16 @@
         bidang:data.bidang, tingkat:data.tingkat, capaian:data.capaian
       });
     },
+    "kesiswaan-ekskul": (data)=>{
+      const record = {
+        nama:data.nama, pembina:data.pembina, jadwal:data.jadwal, anggota:data.anggota
+      };
+      addExtra("kesiswaan_ekskul", record);
+      // Setiap kali data ekstrakurikuler/organisasi baru disimpan, langsung
+      // unduh file .js dengan nama sesuai nama organisasi tersebut
+      // (mis. "OSIS" -> osis.js) supaya bisa dijadikan sumber data tetap.
+      downloadEkskulAsJs(record);
+    },
     "kurikulum-ujian": (data)=>{
       addExtra("kurikulum_jadwal", {
         nama:data.nama, kelas:data.kelas, tanggal:data.tanggal, status:data.status
@@ -870,6 +941,7 @@
   const getKasusBK        = ()=> withExtra("guru_bk_kasus", DATA_GURU_BK.kasus);
   const getPelanggaran    = ()=> withExtra("kesiswaan_pelanggaran", DATA_KESISWAAN.pelanggaran);
   const getPrestasi       = ()=> withExtra("kesiswaan_prestasi", DATA_KESISWAAN.prestasi);
+  const getEkskul         = ()=> withExtra("kesiswaan_ekskul", DATA_KESISWAAN.ekstrakurikuler);
   const getJadwalUjian    = ()=> withExtra("kurikulum_jadwal", DATA_KURIKULUM.jadwalUjian);
   const getKegiatanHumas  = ()=> withExtra("humas_kegiatan", DATA_HUMAS.kegiatan);
   const getPublikasiHumas = ()=> withExtra("humas_publikasi", DATA_HUMAS.publikasi);
@@ -905,6 +977,12 @@
     {name:"bidang",label:"Bidang lomba",full:true},
     {name:"tingkat",label:"Tingkat",type:"select",options:["Sekolah","Kota","Kabupaten","Provinsi","Nasional","Internasional"]},
     {name:"capaian",label:"Capaian",type:"select",options:["Juara 1","Juara 2","Juara 3","Harapan 1","Peserta Terbaik"]}
+  ];
+  const FIELDS_KESISWAAN_EKSKUL = [
+    {name:"nama",label:"Nama Ekstrakurikuler / Organisasi",full:true},
+    {name:"pembina",label:"Pembina"},
+    {name:"jadwal",label:"Jadwal"},
+    {name:"anggota",label:"Jumlah Anggota",type:"number"}
   ];
   const FIELDS_KURIKULUM_UJIAN = [
     {name:"nama",label:"Nama ujian",full:true},
@@ -1074,10 +1152,13 @@
         {key:"tanggal",label:"Tanggal",type:"date"},{key:"nisn",label:"NISN"},{key:"siswa",label:"Siswa"},{key:"kelas",label:"Kelas"},
         {key:"bidang",label:"Bidang"},{key:"tingkat",label:"Tingkat"},{key:"capaian",label:"Capaian",type:"status"}
       ], {key:"kesiswaan_prestasi", title:"Prestasi Siswa", fields:FIELDS_KESISWAAN_PRESTASI})}`;
-  VIEWS.kesiswaan_ekskul = ()=> renderTable(DATA_KESISWAAN.ekstrakurikuler, [
-    {key:"nama",label:"Ekstrakurikuler"},{key:"pembina",label:"Pembina"},
-    {key:"jadwal",label:"Jadwal"},{key:"anggota",label:"Jumlah Anggota"}
-  ]);
+  VIEWS.kesiswaan_ekskul = ()=>`
+      ${addForm("kesiswaan-ekskul","Tambah ekstrakurikuler / organisasi", FIELDS_KESISWAAN_EKSKUL)}
+      <div class="student-hint" style="margin:-6px 0 14px;">Setiap kali data disimpan, file <strong>&lt;nama-organisasi&gt;.js</strong> (mis. <code>osis.js</code>) akan otomatis terunduh browser Anda. Ikon unduh pada tiap baris juga bisa dipakai untuk mengunduh ulang kapan saja.</div>
+      ${renderTable(getEkskul(), [
+        {key:"nama",label:"Ekstrakurikuler"},{key:"pembina",label:"Pembina"},
+        {key:"jadwal",label:"Jadwal"},{key:"anggota",label:"Jumlah Anggota"}
+      ], {key:"kesiswaan_ekskul", title:"Ekstrakurikuler / Organisasi", fields:FIELDS_KESISWAAN_EKSKUL, downloadName:true})}`;
   // Laporan BK — tampilan pemantauan (baca saja, tanpa tombol edit/hapus)
   // supaya Wakasek Kesiswaan bisa mengamati kegiatan/kasus yang ditangani Guru BK.
   VIEWS.kesiswaan_laporan_bk = ()=>{
@@ -1910,7 +1991,7 @@
     if(cancelled) return;
   });
 
-  // Klik tombol edit / hapus pada baris tabel (kolom "Aksi")
+  // Klik tombol edit / hapus / unduh pada baris tabel (kolom "Aksi")
   $("#content").addEventListener("click", function(e){
     const btn = e.target.closest(".icon-btn[data-action]");
     if(!btn) return;
@@ -1921,6 +2002,13 @@
       if(!entry) return;
       if(action === "edit") openEditModal(entry);
       else openDeleteModal(entry);
+      return;
+    }
+    if(action === "download-row"){
+      const id = btn.dataset.id;
+      const entry = ROW_REGISTRY[id];
+      if(!entry) return;
+      downloadEkskulAsJs(entry.row);
       return;
     }
     if(action === "attachment-replace"){
