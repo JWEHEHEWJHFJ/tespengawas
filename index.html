@@ -602,6 +602,14 @@
       if(f.type==="textarea"){
         return `<div class="field ${cls}"><label>${escapeHtml(f.label)}</label><textarea name="${f.name}" rows="3">${escapeHtml(currentVal)}</textarea></div>`;
       }
+      if(f.type==="date-conditional"){
+        return `<div class="field ${cls}">
+            <label>${escapeHtml(f.label)}</label>
+            <input type="date" name="${f.name}" value="${escapeHtml(currentVal)}"
+                   data-role="date-conditional" data-depends-on="${escapeHtml(f.dependsOn)}" data-depends-value="${escapeHtml(f.dependsValue)}">
+            <div class="student-hint">Hanya bisa diisi jika status "${escapeHtml(f.dependsValue)}".</div>
+          </div>`;
+      }
       return `<div class="field ${cls}"><label>${escapeHtml(f.label)}</label><input type="${f.type||'text'}" name="${f.name}" value="${escapeHtml(currentVal)}"></div>`;
     }).join("");
 
@@ -616,6 +624,8 @@
         </div>
       </form>`);
 
+    bindConditionalDateFields($("#edit-row-form"));
+
     $("#edit-row-form").addEventListener("submit", function(e){
       e.preventDefault();
       const patch = {};
@@ -628,6 +638,31 @@
       closeModal();
       renderRoute(currentView);
     });
+  }
+
+  /* =========================================================
+     Field tanggal bersyarat (mis. "Tanggal Selesai" hanya aktif
+     jika status = "Selesai"). Dipakai oleh form tambah data & edit.
+     ========================================================= */
+  function bindConditionalDateFields(form){
+    if(!form) return;
+    const condInputs = $$('input[data-role="date-conditional"]', form);
+    if(condInputs.length===0) return;
+    function sync(){
+      condInputs.forEach(inp=>{
+        const dependsOn = inp.dataset.dependsOn;
+        const dependsValue = inp.dataset.dependsValue;
+        const controlEl = form.elements[dependsOn];
+        const active = controlEl && controlEl.value === dependsValue;
+        inp.disabled = !active;
+        if(!active) inp.value = "";
+      });
+    }
+    condInputs.forEach(inp=>{
+      const controlEl = form.elements[inp.dataset.dependsOn];
+      if(controlEl) controlEl.addEventListener("change", sync);
+    });
+    sync();
   }
 
   /* =========================================================
@@ -654,6 +689,14 @@
       }
       if(f.type==="textarea"){
         return `<div class="field ${cls}"><label>${escapeHtml(f.label)}</label><textarea name="${f.name}" rows="2"></textarea></div>`;
+      }
+      if(f.type==="date-conditional"){
+        return `<div class="field ${cls}">
+            <label>${escapeHtml(f.label)}</label>
+            <input type="date" name="${f.name}"
+                   data-role="date-conditional" data-depends-on="${escapeHtml(f.dependsOn)}" data-depends-value="${escapeHtml(f.dependsValue)}" disabled>
+            <div class="student-hint">Hanya bisa diisi jika status "${escapeHtml(f.dependsValue)}".</div>
+          </div>`;
       }
       return `<div class="field ${cls}"><label>${escapeHtml(f.label)}</label><input type="${f.type||'text'}" name="${f.name}" ${f.type==='date' ? '' : ''}></div>`;
     }).join("");
@@ -1298,7 +1341,11 @@
       addExtra(id+"_prokja", { nama:data.nama, bidang:data.bidang, target:data.target, capaian:data.capaian, status:data.status });
     };
     FORM_HANDLERS[id+"-kegiatan"] = (data)=>{
-      addExtra(id+"_kegiatan", { tanggal:data.tanggal, nama:data.nama, deskripsi:data.deskripsi, status:data.status });
+      addExtra(id+"_kegiatan", {
+        tanggalMulai:data.tanggalMulai,
+        tanggalSelesai: (data.status === "Selesai") ? data.tanggalSelesai : "",
+        nama:data.nama, deskripsi:data.deskripsi, status:data.status
+      });
     };
     FORM_HANDLERS[id+"-keuangan"] = (data)=>{
       addExtra(id+"_keuangan", { tanggal:data.tanggal, keterangan:data.keterangan, jenis:data.jenis, nominal:Number(data.nominal)||0 });
@@ -1332,7 +1379,7 @@
         <div class="section">
           ${sectionHead("Kegiatan terbaru")}
           ${renderTable(kegiatan.slice(0,5), [
-            {key:"tanggal",label:"Tanggal",type:"date"},{key:"nama",label:"Kegiatan"},{key:"status",label:"Status",type:"status"}
+            {key:"tanggalMulai",label:"Tanggal Mulai",type:"date"},{key:"nama",label:"Kegiatan"},{key:"status",label:"Status",type:"status"}
           ])}
         </div>`;
     };
@@ -1353,8 +1400,11 @@
     VIEWS[id+"_kegiatan"] = ()=>`
         ${addForm(id+"-kegiatan","Tambah kegiatan", FIELDS_ORG_KEGIATAN)}
         ${renderTable(getKegiatanOrg(), [
-          {key:"tanggal",label:"Tanggal",type:"date"},{key:"nama",label:"Kegiatan"},
-          {key:"deskripsi",label:"Deskripsi"},{key:"status",label:"Status",type:"status"}
+          {key:"tanggalMulai",label:"Tanggal Mulai",type:"date"},
+          {key:"tanggalSelesai",label:"Tanggal Selesai",type:"date"},
+          {key:"nama",label:"Kegiatan"},
+          {key:"deskripsi",label:"Deskripsi"},
+          {key:"status",label:"Status",type:"status"}
         ], {key:id+"_kegiatan", title:"Kegiatan "+cfg.label, fields:FIELDS_ORG_KEGIATAN})}`;
 
     VIEWS[id+"_keuangan"] = ()=>{
@@ -1413,10 +1463,11 @@
     {name:"status",label:"Status",type:"select",options:["Belum Mulai","Berjalan","Selesai"]}
   ];
   const FIELDS_ORG_KEGIATAN = [
-    {name:"tanggal",label:"Tanggal",type:"date"},
+    {name:"tanggalMulai",label:"Tanggal Mulai",type:"date"},
     {name:"nama",label:"Nama kegiatan",full:true},
     {name:"deskripsi",label:"Deskripsi",type:"textarea",full:true},
-    {name:"status",label:"Status",type:"select",options:["Direncanakan","Berjalan","Selesai"]}
+    {name:"status",label:"Status",type:"select",options:["Direncanakan","Berjalan","Selesai"]},
+    {name:"tanggalSelesai",label:"Tanggal Selesai",type:"date-conditional",dependsOn:"status",dependsValue:"Selesai"}
   ];
   const FIELDS_ORG_KEUANGAN = [
     {name:"tanggal",label:"Tanggal",type:"date"},
@@ -1521,6 +1572,7 @@
     $("#page-title").textContent = routeMeta ? routeMeta.title : "";
     const builder = VIEWS[routeId];
     $("#content").innerHTML = builder ? builder() : `<div class="empty-state">Tampilan belum tersedia.</div>`;
+    $$('form[data-form-id]', $("#content")).forEach(bindConditionalDateFields);
   }
 
   /* ---------------- Cek file data ---------------- */
