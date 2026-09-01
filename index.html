@@ -125,11 +125,11 @@
   /* ---------- Dashboard shell ---------- */
   #dashboard-screen{display:flex;min-height:100vh;}
   #sidebar{
-  width:252px;flex-shrink:0;background:var(--navy-dark);color:#fff;
-  display:flex;flex-direction:column;
-  position:sticky;top:0;align-self:flex-start;
-  height:100vh;overflow-y:auto;
-}
+    width:252px;flex-shrink:0;background:var(--navy-dark);color:#fff;
+    display:flex;flex-direction:column;
+    position:sticky;top:0;align-self:flex-start;
+    height:100vh;overflow-y:auto;
+  }
   .side-head{padding:24px 20px;display:flex;gap:12px;align-items:center;border-bottom:1px solid rgba(255,255,255,.08);}
   .side-head .school-name{font-family:var(--font-display);font-size:15px;line-height:1.25;}
   .side-head .school-tag{font-size:11px;color:rgba(255,255,255,.5);font-family:var(--font-mono);letter-spacing:.05em;}
@@ -287,7 +287,8 @@
     .login-wrap{grid-template-columns:1fr;}
     .login-brand{padding:44px 32px;min-height:260px;}
     #dashboard-screen{flex-direction:column;}
-    #sidebar{width:100%;flex-direction:row;align-items:center;overflow-x:auto;}
+    #sidebar{width:100%;flex-direction:row;align-items:center;overflow-x:auto;
+      height:auto;position:sticky;top:0;z-index:50;}
     .side-head{border-bottom:none;border-right:1px solid rgba(255,255,255,.08);}
     .side-role{display:none;}
     nav#side-nav{flex-direction:row;padding:8px;}
@@ -444,92 +445,15 @@
   const ICON_EDIT = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
   const ICON_DELETE = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`;
   const ICON_DOWNLOAD = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
+  // Ikon "awan" untuk aksi simpan langsung ke repo GitHub.
+  const ICON_GITHUB = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>`;
   // Ikon baru untuk lampiran: Lihat (mata) & Ganti file (panah berputar).
   const ICON_VIEW = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
   const ICON_REPLACE = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>`;
 
-  /* =========================================================
-     GENERATOR FILE data/<nama-organisasi>.js
-     Dipakai oleh fitur "Tambah / Edit Ekstrakurikuler & Organisasi"
-     pada dashboard Wakasek Kesiswaan. Karena aplikasi ini statis
-     (tanpa backend), "menyimpan" data organisasi baru secara permanen
-     dilakukan dengan MENGUNDUH file .js siap pakai yang strukturnya
-     sama seperti data/osis.js, data/pramuka.js, dst. Admin tinggal
-     meletakkan file yang terunduh ke folder data/ lalu mengikuti
-     langkah di README ("Menambah organisasi siswa baru") jika ingin
-     organisasi tersebut punya dashboard penuh (anggota, program kerja,
-     kegiatan, keuangan, LPJ) dan akun login sendiri.
-     ========================================================= */
-  function slugifyOrgName(name){
-    const slug = String(name||"")
-      .toLowerCase()
-      .normalize("NFKD").replace(/[\u0300-\u036f]/g,"")
-      .replace(/[^a-z0-9]+/g,"-")
-      .replace(/^-+|-+$/g,"");
-    return slug || "organisasi";
-  }
-  function buildOrgFileContent(row){
-    const slug = slugifyOrgName(row.nama);
-    const varName = "DATA_" + slug.toUpperCase().replace(/-/g,"_");
-    const namaOrganisasi = row.nama || "";
-    const periode = row.periode || "2025/2026";
-    const pembina = row.pembina || "";
-    return `/* =========================================================
-   data/${slug}.js
-   Data khusus untuk dashboard organisasi ${namaOrganisasi}.
-   Dibuat otomatis lewat fitur "Tambah / Edit Ekstrakurikuler &
-   Organisasi" pada dashboard Wakasek Kesiswaan. Struktur field
-   disamakan dengan organisasi siswa lain (data/osis.js,
-   data/pramuka.js, data/pmr.js, data/paskibra.js) supaya bisa
-   dirender dengan komponen dashboard yang sama di index.html.
-   Lengkapi anggota, program kerja, kegiatan, keuangan, dan LPJ
-   di bawah ini sesuai kebutuhan organisasi, lalu ikuti langkah
-   "Menambah organisasi siswa baru" di README jika organisasi ini
-   perlu dashboard penuh & akun login sendiri.
-   ========================================================= */
-
-const ${varName} = {
-  namaOrganisasi: ${JSON.stringify(namaOrganisasi)},
-  periode: ${JSON.stringify(periode)},
-  pembina: ${JSON.stringify(pembina)},
-
-  anggota: [
-    // { nama: "...", kelas: "...", jabatan: "..." }
-  ],
-
-  programKerja: [
-    // { nama: "...", bidang: "...", target: "...", capaian: "...", status: "Belum Mulai" }
-  ],
-
-  kegiatan: [
-    // { tanggal: "2026-08-01", nama: "...", deskripsi: "...", status: "Direncanakan" }
-  ],
-
-  keuangan: [
-    // { tanggal: "2026-08-01", keterangan: "...", jenis: "Pemasukan", nominal: 0 }
-  ],
-
-  lpj: [
-    // { tanggal: "2026-08-01", periode: "...", disusunOleh: "...", isi: "..." }
-  ]
-};
-`;
-  }
-  function downloadTextFile(filename, content){
-    const blob = new Blob([content], {type:"text/javascript;charset=utf-8"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(()=>URL.revokeObjectURL(url), 1500);
-  }
-
   // Menyimpan referensi baris (beserta konfigurasi field & storage key-nya)
-  // yang sedang tampil di layar, supaya tombol edit/hapus tahu data apa
-  // yang harus dibuka/dihapus tanpa menaruh seluruh objek di atribut HTML.
+  // yang sedang tampil di layar, supaya tombol edit/hapus/unduh tahu data apa
+  // yang harus dibuka/dihapus/diunduh tanpa menaruh seluruh objek di atribut HTML.
   const ROW_REGISTRY = {};
   // Menyimpan referensi catatan (LPJ / catatan pemantauan dengan lampiran)
   // yang sedang tampil, supaya tombol "Ganti file" tahu ke storage key +
@@ -636,9 +560,12 @@ const ${varName} = {
   }
 
   /* ---------------- render tabel generik ---------------- */
-  // actionsConfig (opsional): { key, title, fields }
+  // actionsConfig (opsional): { key, title, fields, downloadName }
   // Jika diisi, tabel mendapat kolom "Aksi" di ujung kanan (setelah kolom
   // terakhir, mis. kolom Status) berisi ikon edit & hapus per baris.
+  // Jika actionsConfig.downloadName truthy, ditambahkan juga ikon unduh
+  // (dipakai oleh tabel Ekstrakurikuler/Organisasi untuk mengunduh baris
+  // sebagai file .js tersendiri).
   function renderTable(rows, columns, actionsConfig){
     if(!rows || rows.length===0){
       return `<div class="table-wrap"><div class="empty-state">Belum ada data untuk ditampilkan.</div></div>`;
@@ -661,13 +588,17 @@ const ${varName} = {
           row, key: actionsConfig.key, fields: actionsConfig.fields,
           title: actionsConfig.title || "data ini"
         };
-        const downloadBtn = actionsConfig.download
-          ? `<button type="button" class="icon-btn icon-download" data-action="download-org-file" data-id="${escapeHtml(String(rowId))}" title="Unduh file data/&lt;nama&gt;.js" aria-label="Unduh file data organisasi">${ICON_DOWNLOAD}</button>`
+        const downloadBtn = actionsConfig.downloadName
+          ? `<button type="button" class="icon-btn icon-download" data-action="download-row" data-id="${escapeHtml(String(rowId))}" title="Unduh sebagai file .js" aria-label="Unduh sebagai file .js">${ICON_DOWNLOAD}</button>`
+          : "";
+        const githubBtn = actionsConfig.githubSync
+          ? `<button type="button" class="icon-btn icon-replace" data-action="github-row" data-id="${escapeHtml(String(rowId))}" title="Simpan ke GitHub" aria-label="Simpan ke GitHub">${ICON_GITHUB}</button>`
           : "";
         actionTd = `<td><div class="row-actions">
+            ${downloadBtn}
+            ${githubBtn}
             <button type="button" class="icon-btn icon-edit" data-action="edit" data-id="${escapeHtml(String(rowId))}" title="Edit data" aria-label="Edit data">${ICON_EDIT}</button>
             <button type="button" class="icon-btn icon-delete" data-action="delete" data-id="${escapeHtml(String(rowId))}" title="Hapus data" aria-label="Hapus data">${ICON_DELETE}</button>
-            ${downloadBtn}
           </div></td>`;
       }
       return `<tr>${tds}${actionTd}</tr>`;
@@ -681,6 +612,155 @@ const ${varName} = {
 
   function sectionHead(title, hint){
     return `<div class="section-head"><h3>${escapeHtml(title)}</h3>${hint?`<span class="hint">${escapeHtml(hint)}</span>`:""}</div>`;
+  }
+
+  /* =========================================================
+     UNDUH DATA EKSTRAKURIKULER/ORGANISASI SEBAGAI FILE .js
+     Dipakai oleh tab "Ekstrakurikuler" (Wakasek Kesiswaan) — setiap
+     organisasi/ekskul bisa diunduh sebagai file JavaScript tersendiri,
+     dengan nama file mengikuti nama organisasinya (mis. "OSIS" ->
+     osis.js), supaya bisa langsung diletakkan/menimpa file di folder
+     data/ jika ingin dijadikan sumber data tetap (bukan localStorage).
+     ========================================================= */
+  // Mengubah nama organisasi menjadi slug aman untuk nama file & nama variabel,
+  // mis. "Karya Ilmiah Remaja" -> "karya-ilmiah-remaja" / "KARYA_ILMIAH_REMAJA"
+  function slugifyFileName(nama){
+    return String(nama||"organisasi")
+      .trim().toLowerCase()
+      .replace(/[^a-z0-9]+/g,"-")
+      .replace(/^-+|-+$/g,"") || "organisasi";
+  }
+  function slugifyVarName(nama){
+    return slugifyFileName(nama).replace(/-/g,"_").toUpperCase() || "ORGANISASI";
+  }
+  function downloadTextFile(fileName, content){
+    const blob = new Blob([content], {type:"text/javascript;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = fileName;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }
+  // Membuat { fileName, varName, content } berformat "const DATA_XXX = {...};"
+  // dari satu baris data ekstrakurikuler/organisasi. Dipakai bersama oleh
+  // fitur "unduh ke komputer" dan "simpan ke GitHub".
+  function buildEkskulJsFile(row){
+    const slugFile = slugifyFileName(row.nama);
+    const varName = "DATA_" + slugifyVarName(row.nama);
+    const obj = {
+      nama: row.nama || "",
+      pembina: row.pembina || "",
+      jadwal: row.jadwal || "",
+      anggota: Number(row.anggota) || 0
+    };
+    const content =
+      `// Data ekstrakurikuler/organisasi: ${row.nama || "-"}\n` +
+      `// File ini dibuat otomatis dari Portal SIM Sekolah.\n` +
+      `const ${varName} = ${JSON.stringify(obj, null, 2)};\n`;
+    return { fileName: slugFile + ".js", varName, content };
+  }
+  // Mengunduh data ekstrakurikuler/organisasi sebagai file .js ke komputer
+  // pengguna (nama file mengikuti nama organisasi tersebut, mis. osis.js).
+  function downloadEkskulAsJs(row){
+    const f = buildEkskulJsFile(row);
+    downloadTextFile(f.fileName, f.content);
+  }
+
+  /* =========================================================
+     SIMPAN LANGSUNG KE REPO GITHUB (opsional) — dipakai tab
+     "Ekstrakurikuler" supaya file data/<nama-organisasi>.js bisa
+     langsung dibuat/diperbarui di repo GitHub tanpa unduh manual.
+
+     PENTING SOAL KEAMANAN: token GitHub yang dimasukkan pengguna di
+     sini HANYA disimpan di sessionStorage browser (hilang saat tab
+     ditutup) dan TIDAK PERNAH ditulis ke dalam file index.html atau
+     ke localStorage. Jangan pernah menaruh token secara hardcode di
+     source code ini, apalagi kalau repo-nya bersifat Public — siapa
+     pun yang membuka source code bisa mencuri token tersebut.
+     ========================================================= */
+  function getGithubSettings(){
+    try{ return JSON.parse(sessionStorage.getItem("github_ekskul_settings") || "{}"); }
+    catch(e){ return {}; }
+  }
+  function saveGithubSettings(s){
+    sessionStorage.setItem("github_ekskul_settings", JSON.stringify(s));
+  }
+  function githubConfigured(){
+    const s = getGithubSettings();
+    return !!(s.owner && s.repo && s.token);
+  }
+  function base64EncodeUnicode(str){
+    return btoa(unescape(encodeURIComponent(str)));
+  }
+  // Membuat/memperbarui satu file lewat GitHub Contents API.
+  // Otomatis mendeteksi apakah file sudah ada (butuh "sha" untuk update).
+  async function pushFileToGithub(path, content, commitMessage){
+    const s = getGithubSettings();
+    if(!s.owner || !s.repo || !s.token){
+      throw new Error("Pengaturan GitHub belum lengkap (owner/repo/token).");
+    }
+    const branch = s.branch || "main";
+    const apiUrl = `https://api.github.com/repos/${encodeURIComponent(s.owner)}/${encodeURIComponent(s.repo)}/contents/${path}`;
+    const headers = {
+      "Authorization": "token " + s.token,
+      "Accept": "application/vnd.github+json"
+    };
+    let sha = null;
+    try{
+      const getResp = await fetch(apiUrl + "?ref=" + encodeURIComponent(branch), { headers });
+      if(getResp.ok){
+        const getData = await getResp.json();
+        sha = getData.sha || null;
+      } else if(getResp.status !== 404){
+        const errData = await getResp.json().catch(()=>({}));
+        throw new Error(errData.message || ("Gagal memeriksa file (HTTP " + getResp.status + ")"));
+      }
+    }catch(err){
+      if(err instanceof TypeError){
+        throw new Error("Tidak bisa menghubungi GitHub. Periksa koneksi internet Anda.");
+      }
+      throw err;
+    }
+    const putResp = await fetch(apiUrl, {
+      method: "PUT",
+      headers: Object.assign({}, headers, {"Content-Type":"application/json"}),
+      body: JSON.stringify(Object.assign(
+        { message: commitMessage, content: base64EncodeUnicode(content), branch: branch },
+        sha ? { sha } : {}
+      ))
+    });
+    if(!putResp.ok){
+      const errData = await putResp.json().catch(()=>({}));
+      if(putResp.status === 401) throw new Error("Token GitHub tidak valid atau sudah kedaluwarsa.");
+      if(putResp.status === 403) throw new Error("Token GitHub tidak punya izin menulis ke repo ini.");
+      if(putResp.status === 404) throw new Error("Repo/owner/branch tidak ditemukan. Periksa pengaturan.");
+      throw new Error(errData.message || ("Gagal menyimpan ke GitHub (HTTP " + putResp.status + ")"));
+    }
+    return true;
+  }
+  // Simpan satu baris ekstrakurikuler/organisasi ke data/<nama>.js di GitHub.
+  // statusElId dicari ULANG lewat document.getElementById setiap kali dipakai
+  // (bukan referensi elemen langsung), karena renderRoute() bisa saja sudah
+  // mengganti seluruh isi #content sebelum proses async ini selesai.
+  function setEkskulSyncStatus(statusElId, cls, text, color){
+    const el = statusElId ? document.getElementById(statusElId) : null;
+    if(!el) return;
+    el.hidden = false;
+    el.className = cls;
+    el.style.color = color || "";
+    el.textContent = text;
+  }
+  async function pushEkskulToGithub(row, statusElId){
+    const f = buildEkskulJsFile(row);
+    setEkskulSyncStatus(statusElId, "student-hint", `Menyimpan ${f.fileName} ke GitHub...`);
+    try{
+      await pushFileToGithub("data/" + f.fileName, f.content, "Update data/" + f.fileName + " dari Portal SIM Sekolah");
+      setEkskulSyncStatus(statusElId, "student-hint filled", `Berhasil disimpan sebagai data/${f.fileName} di GitHub.`);
+      return true;
+    }catch(err){
+      setEkskulSyncStatus(statusElId, "student-hint", `Gagal menyimpan ke GitHub: ${err.message}`, "var(--red)");
+      return false;
+    }
   }
 
   /* =========================================================
@@ -803,6 +883,17 @@ const ${varName} = {
       saveEditOverride(entry.key, row._id, patch);
       closeModal();
       renderRoute(currentView);
+      // Untuk tabel Ekstrakurikuler/Organisasi: setelah data diedit dan
+      // disimpan, sinkronkan ulang data terbaru — ke GitHub kalau sudah
+      // dikonfigurasi, atau unduh ulang file .js kalau belum.
+      if(entry.key === "kesiswaan_ekskul"){
+        const updatedRow = Object.assign({}, row, patch);
+        if(githubConfigured()){
+          pushEkskulToGithub(updatedRow, "ekskul-sync-status");
+        } else {
+          downloadEkskulAsJs(updatedRow);
+        }
+      }
     });
   }
 
@@ -892,17 +983,18 @@ const ${varName} = {
       });
     },
     "kesiswaan-ekskul": (data)=>{
-      const row = {
-        nama: data.nama, pembina: data.pembina, jadwal: data.jadwal,
-        anggota: data.anggota, periode: data.periode
+      const record = {
+        nama:data.nama, pembina:data.pembina, jadwal:data.jadwal, anggota:data.anggota
       };
-      addExtra("kesiswaan_ekskul", row);
-      // Karena aplikasi ini statis (tanpa backend/database), cara paling
-      // permanen untuk "menyimpan" organisasi baru adalah mengunduh file
-      // data/<nama>.js siap pakai — admin tinggal menaruhnya di folder
-      // data/ (lihat README bagian "Menambah organisasi siswa baru").
-      const slug = slugifyOrgName(data.nama);
-      downloadTextFile(slug + ".js", buildOrgFileContent(row));
+      addExtra("kesiswaan_ekskul", record);
+      // Kalau pengaturan GitHub sudah diisi, simpan langsung ke
+      // data/<nama-organisasi>.js di repo GitHub. Kalau belum, jatuhkan
+      // ke perilaku lama: unduh file .js ke komputer.
+      if(githubConfigured()){
+        pushEkskulToGithub(record, "ekskul-sync-status");
+      } else {
+        downloadEkskulAsJs(record);
+      }
     },
     "kurikulum-ujian": (data)=>{
       addExtra("kurikulum_jadwal", {
@@ -966,11 +1058,11 @@ const ${varName} = {
   const getKasusBK        = ()=> withExtra("guru_bk_kasus", DATA_GURU_BK.kasus);
   const getPelanggaran    = ()=> withExtra("kesiswaan_pelanggaran", DATA_KESISWAAN.pelanggaran);
   const getPrestasi       = ()=> withExtra("kesiswaan_prestasi", DATA_KESISWAAN.prestasi);
+  const getEkskul         = ()=> withExtra("kesiswaan_ekskul", DATA_KESISWAAN.ekstrakurikuler);
   const getJadwalUjian    = ()=> withExtra("kurikulum_jadwal", DATA_KURIKULUM.jadwalUjian);
   const getKegiatanHumas  = ()=> withExtra("humas_kegiatan", DATA_HUMAS.kegiatan);
   const getPublikasiHumas = ()=> withExtra("humas_publikasi", DATA_HUMAS.publikasi);
   const getPengajuanSarpras = ()=> withExtra("sarpras_pengajuan", DATA_SARPRAS.pengajuanPerbaikan);
-  const getEkstrakurikuler   = ()=> withExtra("kesiswaan_ekskul", DATA_KESISWAAN.ekstrakurikuler);
   const getCatatanPemantauan = ()=> getExtra("catatan_pemantauan");
   const getSuratMasuk        = ()=> withExtra("tu_surat_masuk", DATA_TATA_USAHA.suratMasuk);
   const getSuratKeluar       = ()=> withExtra("tu_surat_keluar", DATA_TATA_USAHA.suratKeluar);
@@ -1003,15 +1095,11 @@ const ${varName} = {
     {name:"tingkat",label:"Tingkat",type:"select",options:["Sekolah","Kota","Kabupaten","Provinsi","Nasional","Internasional"]},
     {name:"capaian",label:"Capaian",type:"select",options:["Juara 1","Juara 2","Juara 3","Harapan 1","Peserta Terbaik"]}
   ];
-  // Field "Ekstrakurikuler" ganda fungsi: nama/pembina/jadwal/anggota
-  // ditampilkan di tabel, sedangkan "periode" hanya dipakai untuk mengisi
-  // file data/<nama>.js yang diunduh (lihat buildOrgFileContent).
   const FIELDS_KESISWAAN_EKSKUL = [
-    {name:"nama",label:"Nama ekstrakurikuler / organisasi",full:true},
+    {name:"nama",label:"Nama Ekstrakurikuler / Organisasi",full:true},
     {name:"pembina",label:"Pembina"},
-    {name:"jadwal",label:"Jadwal (contoh: Jumat, 14.00 - 16.00)"},
-    {name:"anggota",label:"Jumlah anggota",type:"number"},
-    {name:"periode",label:"Periode (untuk file data, contoh: 2025/2026)"}
+    {name:"jadwal",label:"Jadwal"},
+    {name:"anggota",label:"Jumlah Anggota",type:"number"}
   ];
   const FIELDS_KURIKULUM_UJIAN = [
     {name:"nama",label:"Nama ujian",full:true},
@@ -1181,16 +1269,39 @@ const ${varName} = {
         {key:"tanggal",label:"Tanggal",type:"date"},{key:"nisn",label:"NISN"},{key:"siswa",label:"Siswa"},{key:"kelas",label:"Kelas"},
         {key:"bidang",label:"Bidang"},{key:"tingkat",label:"Tingkat"},{key:"capaian",label:"Capaian",type:"status"}
       ], {key:"kesiswaan_prestasi", title:"Prestasi Siswa", fields:FIELDS_KESISWAAN_PRESTASI})}`;
+  function githubSettingsBox(){
+    const s = getGithubSettings();
+    return `
+      <details class="add-box">
+        <summary>Pengaturan Simpan ke GitHub (opsional)</summary>
+        <div class="add-box-body">
+          <div class="student-hint" style="margin-bottom:10px;">
+            Isi bagian ini kalau Anda ingin file <code>data/&lt;nama-organisasi&gt;.js</code> langsung dibuat/diperbarui di repo GitHub Anda.
+            Token hanya disimpan sementara di browser ini (hilang saat tab ditutup) dan <strong>tidak pernah ikut tersimpan</strong> di file portal ini.
+            Jika tidak diisi, data tetap bisa diunduh manual lewat ikon unduh.
+          </div>
+          <form id="github-settings-form">
+            <div class="form-grid">
+              <div class="field"><label>Owner / Username GitHub</label><input type="text" name="owner" value="${escapeHtml(s.owner||"")}" placeholder="mis. JWEHEHEWJHFJ"></div>
+              <div class="field"><label>Nama Repo</label><input type="text" name="repo" value="${escapeHtml(s.repo||"")}" placeholder="mis. tespengawas"></div>
+              <div class="field"><label>Branch</label><input type="text" name="branch" value="${escapeHtml(s.branch||"main")}" placeholder="main"></div>
+              <div class="field"><label>Personal Access Token</label><input type="password" name="token" value="${escapeHtml(s.token||"")}" placeholder="ghp_..." autocomplete="off"></div>
+            </div>
+            <button type="submit" class="btn btn-gold">Simpan Pengaturan (sesi ini)</button>
+          </form>
+          <div id="github-settings-status" class="student-hint" hidden></div>
+        </div>
+      </details>`;
+  }
   VIEWS.kesiswaan_ekskul = ()=>`
       ${addForm("kesiswaan-ekskul","Tambah ekstrakurikuler / organisasi", FIELDS_KESISWAAN_EKSKUL)}
-      <p class="student-hint" style="margin:-8px 0 16px;font-size:13px;">Setelah ditekan "Simpan data", entri baru langsung tampil di tabel dan file
-        <code>&lt;nama&gt;.js</code> (mis. <code>osis.js</code>) otomatis terunduh — unggah file itu ke folder
-        <code>data/</code> agar tersimpan permanen. Tombol unduh pada tiap baris bisa dipakai kapan saja untuk
-        mengunduh ulang file organisasi tersebut.</p>
-      ${renderTable(getEkstrakurikuler(), [
+      ${githubSettingsBox()}
+      <div id="ekskul-sync-status" class="student-hint" hidden style="margin:-6px 0 14px;"></div>
+      <div class="student-hint" style="margin:-6px 0 14px;">Tanpa pengaturan GitHub, setiap kali data disimpan file <strong>&lt;nama-organisasi&gt;.js</strong> (mis. <code>osis.js</code>) akan otomatis terunduh ke komputer Anda. Kalau pengaturan GitHub sudah diisi, data akan langsung disimpan ke <code>data/&lt;nama-organisasi&gt;.js</code> di repo tersebut. Ikon awan pada tiap baris bisa dipakai untuk menyimpan ulang ke GitHub kapan saja, dan ikon unduh untuk mengunduh manual.</div>
+      ${renderTable(getEkskul(), [
         {key:"nama",label:"Ekstrakurikuler"},{key:"pembina",label:"Pembina"},
         {key:"jadwal",label:"Jadwal"},{key:"anggota",label:"Jumlah Anggota"}
-      ], {key:"kesiswaan_ekskul", title:"Ekstrakurikuler / Organisasi", fields:FIELDS_KESISWAAN_EKSKUL, download:true})}`;
+      ], {key:"kesiswaan_ekskul", title:"Ekstrakurikuler / Organisasi", fields:FIELDS_KESISWAAN_EKSKUL, downloadName:true, githubSync:true})}`;
   // Laporan BK — tampilan pemantauan (baca saja, tanpa tombol edit/hapus)
   // supaya Wakasek Kesiswaan bisa mengamati kegiatan/kasus yang ditangani Guru BK.
   VIEWS.kesiswaan_laporan_bk = ()=>{
@@ -1942,6 +2053,29 @@ const ${varName} = {
     if(container) container.innerHTML = renderOrgLaporanContent();
   });
 
+  // Submit form "Pengaturan Simpan ke GitHub": simpan ke sessionStorage saja
+  // (tidak pernah ditulis ke file portal ini), lalu tampilkan konfirmasi.
+  $("#content").addEventListener("submit", function(e){
+    const form = e.target.closest("#github-settings-form");
+    if(!form) return;
+    e.preventDefault();
+    const s = {
+      owner: form.elements.owner.value.trim(),
+      repo: form.elements.repo.value.trim(),
+      branch: form.elements.branch.value.trim() || "main",
+      token: form.elements.token.value.trim()
+    };
+    saveGithubSettings(s);
+    const status = form.parentElement.querySelector("#github-settings-status");
+    if(status){
+      status.hidden = false;
+      status.className = "student-hint filled";
+      status.textContent = s.owner && s.repo && s.token
+        ? "Pengaturan tersimpan untuk sesi browser ini. Token tidak disimpan permanen dan akan hilang saat tab ditutup."
+        : "Pengaturan tersimpan, tapi owner/repo/token belum lengkap — simpan otomatis ke GitHub belum bisa dipakai.";
+    }
+  });
+
   // Delegasi submit untuk semua form "tambah data" di dalam konten dashboard
   $("#content").addEventListener("submit", function(e){
     const form = e.target.closest("form[data-form-id]");
@@ -2023,7 +2157,7 @@ const ${varName} = {
     if(cancelled) return;
   });
 
-  // Klik tombol edit / hapus pada baris tabel (kolom "Aksi")
+  // Klik tombol edit / hapus / unduh pada baris tabel (kolom "Aksi")
   $("#content").addEventListener("click", function(e){
     const btn = e.target.closest(".icon-btn[data-action]");
     if(!btn) return;
@@ -2036,12 +2170,22 @@ const ${varName} = {
       else openDeleteModal(entry);
       return;
     }
-    if(action === "download-org-file"){
+    if(action === "download-row"){
       const id = btn.dataset.id;
       const entry = ROW_REGISTRY[id];
       if(!entry) return;
-      const slug = slugifyOrgName(entry.row.nama);
-      downloadTextFile(slug + ".js", buildOrgFileContent(entry.row));
+      downloadEkskulAsJs(entry.row);
+      return;
+    }
+    if(action === "github-row"){
+      const id = btn.dataset.id;
+      const entry = ROW_REGISTRY[id];
+      if(!entry) return;
+      if(!githubConfigured()){
+        alert("Isi dulu Owner, Repo, dan Token pada bagian \"Pengaturan Simpan ke GitHub\" di atas tabel.");
+        return;
+      }
+      pushEkskulToGithub(entry.row, "ekskul-sync-status");
       return;
     }
     if(action === "attachment-replace"){
