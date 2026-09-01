@@ -125,9 +125,11 @@
   /* ---------- Dashboard shell ---------- */
   #dashboard-screen{display:flex;min-height:100vh;}
   #sidebar{
-    width:252px;flex-shrink:0;background:var(--navy-dark);color:#fff;
-    display:flex;flex-direction:column;
-  }
+  width:252px;flex-shrink:0;background:var(--navy-dark);color:#fff;
+  display:flex;flex-direction:column;
+  position:sticky;top:0;align-self:flex-start;
+  height:100vh;overflow-y:auto;
+}
   .side-head{padding:24px 20px;display:flex;gap:12px;align-items:center;border-bottom:1px solid rgba(255,255,255,.08);}
   .side-head .school-name{font-family:var(--font-display);font-size:15px;line-height:1.25;}
   .side-head .school-tag{font-size:11px;color:rgba(255,255,255,.5);font-family:var(--font-mono);letter-spacing:.05em;}
