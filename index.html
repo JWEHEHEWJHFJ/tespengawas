@@ -960,6 +960,43 @@
   ];
 
   /* =========================================================
+     PENCARIAN / FILTER — dipakai bersama oleh tampilan Kasus BK
+     (Guru BK, Pemantauan Kepsek/Pengawas, dan Laporan BK di
+     Wakasek Kesiswaan) supaya bisa menyeleksi berdasarkan
+     NISN, nama, atau kelas siswa tanpa menduplikasi kode.
+     ========================================================= */
+  function filterRowsBySearch(rows, query, fields){
+    const q = String(query||"").trim().toLowerCase();
+    if(!q) return rows;
+    return rows.filter(row => fields.some(f => String(row[f]||"").toLowerCase().includes(q)));
+  }
+
+  // Kolom tabel Kasus BK — NISN sengaja TIDAK ditampilkan sebagai kolom
+  // (disembunyikan dari tampilan), tapi datanya tetap dipakai untuk
+  // pencarian lewat kotak seleksi di atas tabel.
+  function renderKasusBKTable(withActions){
+    const rows = filterRowsBySearch(getKasusBK(), bkKasusFilter, ["nisn","siswa","kelas"]);
+    const columns = [
+      {key:"tanggal",label:"Tanggal",type:"date"},
+      {key:"siswa",label:"Siswa"},
+      {key:"kelas",label:"Kelas"},
+      {key:"kategori",label:"Kategori"},
+      {key:"uraian",label:"Uraian"},
+      {key:"tindakLanjut",label:"Tindak Lanjut"},
+      {key:"status",label:"Status",type:"status"}
+    ];
+    return renderTable(rows, columns, withActions ? {key:"guru_bk_kasus", title:"Kasus BK", fields:FIELDS_BK_KASUS} : null);
+  }
+
+  // Kotak teks untuk menyeleksi kasus BK berdasarkan NISN, nama, atau kelas siswa.
+  function bkKasusFilterBox(){
+    return `<div class="field" style="max-width:420px;">
+        <label>Cari kasus (NISN / Nama / Kelas siswa)</label>
+        <input type="text" data-role="bk-kasus-filter-input" placeholder="Ketik NISN, nama, atau kelas siswa..." value="${escapeHtml(bkKasusFilter)}">
+      </div>`;
+  }
+
+  /* =========================================================
      VIEW BUILDERS — satu fungsi per "tab" tiap divisi
      ========================================================= */
   const VIEWS = {};
@@ -991,16 +1028,8 @@
   VIEWS.bk_kasus = ()=>{
     return `
       ${addForm("bk-kasus","Tambah catatan kasus BK", FIELDS_BK_KASUS)}
-      ${renderTable(getKasusBK(), [
-        {key:"tanggal",label:"Tanggal",type:"date"},
-        {key:"nisn",label:"NISN"},
-        {key:"siswa",label:"Siswa"},
-        {key:"kelas",label:"Kelas"},
-        {key:"kategori",label:"Kategori"},
-        {key:"uraian",label:"Uraian"},
-        {key:"tindakLanjut",label:"Tindak Lanjut"},
-        {key:"status",label:"Status",type:"status"}
-      ], {key:"guru_bk_kasus", title:"Kasus BK", fields:FIELDS_BK_KASUS})}`;
+      ${bkKasusFilterBox()}
+      <div data-role="bk-kasus-table-container" data-with-actions="true" style="margin-top:16px;">${renderKasusBKTable(true)}</div>`;
   };
   VIEWS.bk_jadwal = ()=> renderTable(DATA_GURU_BK.jadwalKonseling, [
     {key:"hari",label:"Hari"},{key:"waktu",label:"Waktu"},{key:"agenda",label:"Agenda"}
@@ -1047,6 +1076,14 @@
     {key:"nama",label:"Ekstrakurikuler"},{key:"pembina",label:"Pembina"},
     {key:"jadwal",label:"Jadwal"},{key:"anggota",label:"Jumlah Anggota"}
   ]);
+  // Laporan BK — tampilan pemantauan (baca saja, tanpa tombol edit/hapus)
+  // supaya Wakasek Kesiswaan bisa mengamati kegiatan/kasus yang ditangani Guru BK.
+  VIEWS.kesiswaan_laporan_bk = ()=>{
+    return `
+      ${sectionHead("Laporan Kegiatan Guru BK", "Data kasus bimbingan konseling — hanya untuk dipantau")}
+      ${bkKasusFilterBox()}
+      <div data-role="bk-kasus-table-container" data-with-actions="false" style="margin-top:16px;">${renderKasusBKTable(false)}</div>`;
+  };
 
   /* ---------- KURIKULUM ---------- */
   VIEWS.kurikulum_ringkasan = ()=>{
@@ -1330,7 +1367,8 @@
       {id:"kesiswaan_ringkasan", label:"Ringkasan", title:"Ringkasan Kesiswaan"},
       {id:"kesiswaan_pelanggaran", label:"Pelanggaran", title:"Pelanggaran Siswa"},
       {id:"kesiswaan_prestasi", label:"Prestasi", title:"Prestasi Siswa"},
-      {id:"kesiswaan_ekskul", label:"Ekstrakurikuler", title:"Ekstrakurikuler"}
+      {id:"kesiswaan_ekskul", label:"Ekstrakurikuler", title:"Ekstrakurikuler"},
+      {id:"kesiswaan_laporan_bk", label:"Laporan BK", title:"Laporan Kegiatan Guru BK"}
     ],
     kurikulum: [
       {id:"kurikulum_ringkasan", label:"Ringkasan", title:"Ringkasan Kurikulum"},
@@ -1545,8 +1583,27 @@
   ORGANISASI_LIST.forEach(registerOrgDashboard);
 
   /* ---------- Laporan Organisasi (dilihat Wakasek Kesiswaan, Kepala Sekolah, Pengawas) ---------- */
-  VIEWS.kesiswaan_laporan_organisasi = ()=>{
-    return ORGANISASI_LIST.map(org=>{
+  // Kotak seleksi supaya pengguna bisa memilih organisasi tertentu yang ingin
+  // diamati/ditampilkan, atau tetap melihat semua organisasi sekaligus.
+  function orgLaporanSelectBox(){
+    const opts = [`<option value="semua" ${orgLaporanFilter==="semua"?"selected":""}>Semua Organisasi</option>`]
+      .concat(ORGANISASI_LIST.map(org=>
+        `<option value="${escapeHtml(org.id)}" ${orgLaporanFilter===org.id?"selected":""}>${escapeHtml(org.label)}</option>`
+      )).join("");
+    return `<div class="field" style="max-width:320px;">
+        <label>Pilih organisasi yang ingin diamati</label>
+        <select data-role="org-laporan-select">${opts}</select>
+      </div>`;
+  }
+
+  function renderOrgLaporanContent(){
+    const orgsToShow = orgLaporanFilter === "semua"
+      ? ORGANISASI_LIST
+      : ORGANISASI_LIST.filter(org => org.id === orgLaporanFilter);
+    if(orgsToShow.length===0){
+      return `<div class="empty-state">Organisasi tidak ditemukan.</div>`;
+    }
+    return orgsToShow.map(org=>{
       const g = ORG_GETTERS[org.id];
       const anggota = g.getAnggota(), prokja = g.getProkja(), keu = g.getKeuangan(), lpj = g.getLpj();
       const pemasukan = keu.filter(k=>k.jenis==="Pemasukan").reduce((a,b)=>a+Number(b.nominal||0),0);
@@ -1573,6 +1630,12 @@
           ${lpjHtml}
         </div>`;
     }).join("");
+  }
+
+  VIEWS.kesiswaan_laporan_organisasi = ()=>{
+    return `
+      ${orgLaporanSelectBox()}
+      <div data-role="org-laporan-container" style="margin-top:20px;">${renderOrgLaporanContent()}</div>`;
   };
   VIEWS.monitor_organisasi = VIEWS.kesiswaan_laporan_organisasi;
 
@@ -1590,6 +1653,8 @@
      ========================================================= */
   let currentUser = null;
   let currentView = null;
+  let bkKasusFilter = "";       // teks pencarian (NISN/Nama/Kelas) untuk tabel Kasus BK
+  let orgLaporanFilter = "semua"; // id organisasi yang dipilih pada Laporan Organisasi ("semua" = tampilkan semua)
 
   function findUser(username, password){
     return USERS.find(u => u.username===username && u.password===password) || null;
@@ -1738,6 +1803,29 @@
   }
   $("#content").addEventListener("change", handleConditionalDateChange);
   $("#modal-box").addEventListener("change", handleConditionalDateChange);
+
+  // Kotak seleksi Kasus BK (NISN/Nama/Kelas): filter tabel tanpa me-render
+  // ulang seluruh tampilan, supaya fokus pada kotak teks tidak hilang.
+  $("#content").addEventListener("input", function(e){
+    const inp = e.target.closest('input[data-role="bk-kasus-filter-input"]');
+    if(!inp) return;
+    bkKasusFilter = inp.value;
+    const container = $('[data-role="bk-kasus-table-container"]');
+    if(container){
+      const withActions = container.dataset.withActions === "true";
+      container.innerHTML = renderKasusBKTable(withActions);
+    }
+  });
+
+  // Dropdown seleksi organisasi pada Laporan Organisasi: tampilkan hanya
+  // organisasi yang dipilih (atau semua organisasi).
+  $("#content").addEventListener("change", function(e){
+    const sel = e.target.closest('select[data-role="org-laporan-select"]');
+    if(!sel) return;
+    orgLaporanFilter = sel.value;
+    const container = $('[data-role="org-laporan-container"]');
+    if(container) container.innerHTML = renderOrgLaporanContent();
+  });
 
   // Delegasi submit untuk semua form "tambah data" di dalam konten dashboard
   $("#content").addEventListener("submit", function(e){
