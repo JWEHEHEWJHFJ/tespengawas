@@ -428,6 +428,7 @@
   // Ikon edit & hapus untuk kolom "Aksi" pada tabel.
   const ICON_EDIT = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
   const ICON_DELETE = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`;
+  const ICON_DOWNLOAD = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
 
   // Menyimpan referensi baris (beserta konfigurasi field & storage key-nya)
   // yang sedang tampil di layar, supaya tombol edit/hapus tahu data apa
@@ -472,10 +473,16 @@
     try{ return JSON.parse(localStorage.getItem("extra_"+key) || "[]"); }
     catch(e){ return []; }
   }
-  function addExtra(key, record){
+  // opts.append = true  -> data baru diletakkan di URUTAN PALING BAWAH
+  //               (dipakai untuk "Anggota", supaya anggota yang baru
+  //               ditambahkan muncul setelah anggota yang sudah ada).
+  // opts tidak diisi / append=false -> data baru diletakkan di paling atas
+  //               (perilaku lama, dipakai untuk kegiatan/kasus/dll).
+  function addExtra(key, record, opts){
+    opts = opts || {};
     const list = getExtra(key);
     record._id = "x" + Date.now() + Math.random().toString(36).slice(2,7);
-    list.unshift(record);
+    if(opts.append){ list.push(record); } else { list.unshift(record); }
     localStorage.setItem("extra_"+key, JSON.stringify(list));
   }
   function getDeletedIds(key){
@@ -504,6 +511,21 @@
     const extraList = getExtra(key); // sudah punya _id ("x...")
     const baseList = base.map((row, i)=> Object.assign({}, row, {_id:"b"+i, _isBase:true}));
     let combined = extraList.concat(baseList);
+    if(deleted.length){
+      combined = combined.filter(row => deleted.indexOf(row._id) === -1);
+    }
+    combined = combined.map(row => overrides[row._id] ? Object.assign({}, row, overrides[row._id]) : row);
+    return combined;
+  }
+  // Sama seperti withExtra, tapi data BAWAAN ditampilkan lebih dulu dan
+  // data TAMBAHAN (baru) diletakkan setelahnya — dipakai untuk daftar
+  // "Anggota" supaya anggota yang baru diinput muncul paling bawah.
+  function withExtraAppend(key, base){
+    const deleted = getDeletedIds(key);
+    const overrides = getEditOverrides(key);
+    const extraList = getExtra(key); // sudah punya _id ("x...")
+    const baseList = base.map((row, i)=> Object.assign({}, row, {_id:"b"+i, _isBase:true}));
+    let combined = baseList.concat(extraList);
     if(deleted.length){
       combined = combined.filter(row => deleted.indexOf(row._id) === -1);
     }
@@ -602,12 +624,19 @@
       if(f.type==="textarea"){
         return `<div class="field ${cls}"><label>${escapeHtml(f.label)}</label><textarea name="${f.name}" rows="3">${escapeHtml(currentVal)}</textarea></div>`;
       }
-      if(f.type==="date-conditional"){
+      if(f.type==="end-date"){
+        const isEnabled = String(row.status||"") === "Selesai";
         return `<div class="field ${cls}">
             <label>${escapeHtml(f.label)}</label>
-            <input type="date" name="${f.name}" value="${escapeHtml(currentVal)}"
-                   data-role="date-conditional" data-depends-on="${escapeHtml(f.dependsOn)}" data-depends-value="${escapeHtml(f.dependsValue)}">
-            <div class="student-hint">Hanya bisa diisi jika status "${escapeHtml(f.dependsValue)}".</div>
+            <input type="date" name="${f.name}" data-role="conditional-date" value="${escapeHtml(currentVal)}" ${isEnabled?"":"disabled"}>
+            <div class="student-hint" data-conditional-hint>${isEnabled?"":'Isi tanggal selesai setelah status diubah menjadi "Selesai".'}</div>
+          </div>`;
+      }
+      if(f.type==="file"){
+        return `<div class="field ${cls} full">
+            <label>${escapeHtml(f.label)}</label>
+            <input type="text" value="${row[f.name] && row[f.name].fileName ? escapeHtml(row[f.name].fileName) : 'Tidak ada lampiran'}" disabled>
+            <div class="student-hint">Lampiran tidak dapat diganti lewat form edit — hapus &amp; tambahkan ulang jika perlu mengganti file.</div>
           </div>`;
       }
       return `<div class="field ${cls}"><label>${escapeHtml(f.label)}</label><input type="${f.type||'text'}" name="${f.name}" value="${escapeHtml(currentVal)}"></div>`;
@@ -624,13 +653,11 @@
         </div>
       </form>`);
 
-    bindConditionalDateFields($("#edit-row-form"));
-
     $("#edit-row-form").addEventListener("submit", function(e){
       e.preventDefault();
       const patch = {};
       fields.forEach(f=>{
-        if(f.type==="student-select") return; // identitas siswa tidak diedit di sini
+        if(f.type==="student-select" || f.type==="file") return; // identitas siswa & lampiran tidak diedit di sini
         const el = e.target.elements[f.name];
         if(el) patch[f.name] = el.value;
       });
@@ -638,31 +665,6 @@
       closeModal();
       renderRoute(currentView);
     });
-  }
-
-  /* =========================================================
-     Field tanggal bersyarat (mis. "Tanggal Selesai" hanya aktif
-     jika status = "Selesai"). Dipakai oleh form tambah data & edit.
-     ========================================================= */
-  function bindConditionalDateFields(form){
-    if(!form) return;
-    const condInputs = $$('input[data-role="date-conditional"]', form);
-    if(condInputs.length===0) return;
-    function sync(){
-      condInputs.forEach(inp=>{
-        const dependsOn = inp.dataset.dependsOn;
-        const dependsValue = inp.dataset.dependsValue;
-        const controlEl = form.elements[dependsOn];
-        const active = controlEl && controlEl.value === dependsValue;
-        inp.disabled = !active;
-        if(!active) inp.value = "";
-      });
-    }
-    condInputs.forEach(inp=>{
-      const controlEl = form.elements[inp.dataset.dependsOn];
-      if(controlEl) controlEl.addEventListener("change", sync);
-    });
-    sync();
   }
 
   /* =========================================================
@@ -690,12 +692,18 @@
       if(f.type==="textarea"){
         return `<div class="field ${cls}"><label>${escapeHtml(f.label)}</label><textarea name="${f.name}" rows="2"></textarea></div>`;
       }
-      if(f.type==="date-conditional"){
+      if(f.type==="end-date"){
         return `<div class="field ${cls}">
             <label>${escapeHtml(f.label)}</label>
-            <input type="date" name="${f.name}"
-                   data-role="date-conditional" data-depends-on="${escapeHtml(f.dependsOn)}" data-depends-value="${escapeHtml(f.dependsValue)}" disabled>
-            <div class="student-hint">Hanya bisa diisi jika status "${escapeHtml(f.dependsValue)}".</div>
+            <input type="date" name="${f.name}" data-role="conditional-date" disabled>
+            <div class="student-hint" data-conditional-hint>Isi tanggal selesai setelah status diubah menjadi "Selesai".</div>
+          </div>`;
+      }
+      if(f.type==="file"){
+        return `<div class="field ${cls} full">
+            <label>${escapeHtml(f.label)}</label>
+            <input type="file" name="${f.name}" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+            <div class="student-hint">Format yang didukung: PDF atau Word (.doc/.docx), maksimal 4 MB.</div>
           </div>`;
       }
       return `<div class="field ${cls}"><label>${escapeHtml(f.label)}</label><input type="${f.type||'text'}" name="${f.name}" ${f.type==='date' ? '' : ''}></div>`;
@@ -1320,7 +1328,9 @@
     const id = cfg.id;
     const DATA = cfg.dataVar;
 
-    const getAnggota      = ()=> withExtra(id+"_anggota", DATA.anggota);
+    // Anggota: data lama ditampilkan dulu, anggota BARU ditambahkan di
+    // urutan paling bawah (lihat withExtraAppend).
+    const getAnggota      = ()=> withExtraAppend(id+"_anggota", DATA.anggota);
     const getProkja       = ()=> withExtra(id+"_prokja", DATA.programKerja);
     const getKegiatanOrg  = ()=> withExtra(id+"_kegiatan", DATA.kegiatan);
     const getKeuanganOrg  = ()=> withExtra(id+"_keuangan", DATA.keuangan);
@@ -1335,7 +1345,7 @@
         nama: siswa ? siswa.nama : "(siswa tidak ditemukan)",
         kelas: siswa ? siswa.kelas : "-",
         jabatan: data.jabatan
-      });
+      }, {append:true}); // anggota baru diletakkan paling bawah
     };
     FORM_HANDLERS[id+"-prokja"] = (data)=>{
       addExtra(id+"_prokja", { nama:data.nama, bidang:data.bidang, target:data.target, capaian:data.capaian, status:data.status });
@@ -1343,7 +1353,7 @@
     FORM_HANDLERS[id+"-kegiatan"] = (data)=>{
       addExtra(id+"_kegiatan", {
         tanggalMulai:data.tanggalMulai,
-        tanggalSelesai: (data.status === "Selesai") ? data.tanggalSelesai : "",
+        tanggalSelesai:data.status==="Selesai" ? (data.tanggalSelesai||"") : "",
         nama:data.nama, deskripsi:data.deskripsi, status:data.status
       });
     };
@@ -1355,7 +1365,8 @@
         tanggal:new Date().toISOString().slice(0,10),
         periode:data.periode,
         disusunOleh: user.name + " (" + user.jabatan + ")",
-        isi:data.isi
+        isi:data.isi,
+        lampiran: data.lampiran || null
       });
     };
 
@@ -1403,8 +1414,7 @@
           {key:"tanggalMulai",label:"Tanggal Mulai",type:"date"},
           {key:"tanggalSelesai",label:"Tanggal Selesai",type:"date"},
           {key:"nama",label:"Kegiatan"},
-          {key:"deskripsi",label:"Deskripsi"},
-          {key:"status",label:"Status",type:"status"}
+          {key:"deskripsi",label:"Deskripsi"},{key:"status",label:"Status",type:"status"}
         ], {key:id+"_kegiatan", title:"Kegiatan "+cfg.label, fields:FIELDS_ORG_KEGIATAN})}`;
 
     VIEWS[id+"_keuangan"] = ()=>{
@@ -1432,11 +1442,18 @@
             <div class="note-item">
               <div class="note-meta"><strong>${escapeHtml(n.disusunOleh)}</strong> — ${escapeHtml(n.periode)} · ${fmtDate(n.tanggal)}</div>
               <div>${escapeHtml(n.isi)}</div>
+              ${n.lampiran && n.lampiran.dataUrl ? `
+                <div style="margin-top:10px;">
+                  <a class="btn btn-outline" style="width:auto;" href="${n.lampiran.dataUrl}" download="${escapeHtml(n.lampiran.fileName||'lampiran')}">
+                    ${ICON_DOWNLOAD} ${escapeHtml(n.lampiran.fileName||'Unduh lampiran')}
+                  </a>
+                </div>` : ""}
             </div>`).join("");
       return `
         ${addForm(id+"-lpj","Tambah laporan pertanggungjawaban (LPJ)",[
           {name:"periode",label:"Periode laporan (contoh: Minggu ke-3 Agustus 2026)",full:true},
-          {name:"isi",label:"Isi laporan",type:"textarea",full:true}
+          {name:"isi",label:"Isi laporan",type:"textarea",full:true},
+          {name:"lampiran",label:"Lampiran (PDF/Word)",type:"file",full:true}
         ])}
         ${list}`;
     };
@@ -1464,10 +1481,10 @@
   ];
   const FIELDS_ORG_KEGIATAN = [
     {name:"tanggalMulai",label:"Tanggal Mulai",type:"date"},
+    {name:"tanggalSelesai",label:"Tanggal Selesai",type:"end-date"},
     {name:"nama",label:"Nama kegiatan",full:true},
     {name:"deskripsi",label:"Deskripsi",type:"textarea",full:true},
-    {name:"status",label:"Status",type:"select",options:["Direncanakan","Berjalan","Selesai"]},
-    {name:"tanggalSelesai",label:"Tanggal Selesai",type:"date-conditional",dependsOn:"status",dependsValue:"Selesai"}
+    {name:"status",label:"Status",type:"select",options:["Direncanakan","Berjalan","Selesai"]}
   ];
   const FIELDS_ORG_KEUANGAN = [
     {name:"tanggal",label:"Tanggal",type:"date"},
@@ -1491,6 +1508,12 @@
             <div class="note-item">
               <div class="note-meta"><strong>${escapeHtml(n.disusunOleh)}</strong> — ${escapeHtml(n.periode)} · ${fmtDate(n.tanggal)}</div>
               <div>${escapeHtml(n.isi)}</div>
+              ${n.lampiran && n.lampiran.dataUrl ? `
+                <div style="margin-top:10px;">
+                  <a class="btn btn-outline" style="width:auto;" href="${n.lampiran.dataUrl}" download="${escapeHtml(n.lampiran.fileName||'lampiran')}">
+                    ${ICON_DOWNLOAD} ${escapeHtml(n.lampiran.fileName||'Unduh lampiran')}
+                  </a>
+                </div>` : ""}
             </div>`).join("");
       return `
         <div class="section">
@@ -1572,7 +1595,6 @@
     $("#page-title").textContent = routeMeta ? routeMeta.title : "";
     const builder = VIEWS[routeId];
     $("#content").innerHTML = builder ? builder() : `<div class="empty-state">Tampilan belum tersedia.</div>`;
-    $$('form[data-form-id]', $("#content")).forEach(bindConditionalDateFields);
   }
 
   /* ---------------- Cek file data ---------------- */
@@ -1651,6 +1673,28 @@
     showLogin();
   });
 
+  // Toggle field "Tanggal Selesai" berdasarkan nilai field "Status" pada
+  // form yang sama (dipakai baik di form "Tambah data" maupun form Edit).
+  function handleConditionalDateChange(e){
+    const select = e.target.closest('select[name="status"]');
+    if(!select) return;
+    const form = select.closest("form");
+    if(!form) return;
+    const dateInput = form.querySelector('input[data-role="conditional-date"]');
+    if(!dateInput) return;
+    const hint = form.querySelector('[data-conditional-hint]');
+    if(select.value === "Selesai"){
+      dateInput.disabled = false;
+      if(hint) hint.textContent = "";
+    } else {
+      dateInput.disabled = true;
+      dateInput.value = "";
+      if(hint) hint.textContent = 'Isi tanggal selesai setelah status diubah menjadi "Selesai".';
+    }
+  }
+  $("#content").addEventListener("change", handleConditionalDateChange);
+  $("#modal-box").addEventListener("change", handleConditionalDateChange);
+
   // Delegasi submit untuk semua form "tambah data" di dalam konten dashboard
   $("#content").addEventListener("submit", function(e){
     const form = e.target.closest("form[data-form-id]");
@@ -1671,15 +1715,65 @@
       return;
     }
 
+    // Kumpulkan nilai field teks biasa (kolom file ditangani terpisah di bawah)
     const data = {};
     Array.from(form.elements).forEach(el=>{
-      if(el.name) data[el.name] = el.value;
+      if(el.name && el.type !== "file") data[el.name] = el.value;
     });
-    handler(data, currentUser);
-    form.reset();
-    const details = form.closest("details");
-    if(details) details.open = false;
-    renderRoute(currentView); // refresh tampilan agar data baru langsung terlihat
+
+    function finishSubmit(){
+      handler(data, currentUser);
+      form.reset();
+      // Setelah reset, pastikan field tanggal bersyarat kembali ke kondisi
+      // nonaktif (form.reset() tidak selalu memicu event "change").
+      const conditionalInput = form.querySelector('input[data-role="conditional-date"]');
+      if(conditionalInput){
+        conditionalInput.disabled = true;
+        conditionalInput.value = "";
+        const hint = form.querySelector('[data-conditional-hint]');
+        if(hint) hint.textContent = 'Isi tanggal selesai setelah status diubah menjadi "Selesai".';
+      }
+      const details = form.closest("details");
+      if(details) details.open = false;
+      renderRoute(currentView); // refresh tampilan agar data baru langsung terlihat
+    }
+
+    // Tangani lampiran file (mis. LPJ): baca sebagai base64 sebelum menyimpan.
+    const fileInputs = Array.from(form.querySelectorAll('input[type="file"]')).filter(inp => inp.files && inp.files[0]);
+    if(fileInputs.length === 0){
+      finishSubmit();
+      return;
+    }
+
+    const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 MB — batas aman untuk localStorage
+    let cancelled = false;
+    let pending = fileInputs.length;
+    fileInputs.forEach(inp=>{
+      const file = inp.files[0];
+      if(!/\.(pdf|docx?|DOCX?|PDF)$/i.test(file.name)){
+        cancelled = true;
+        alert('File "' + file.name + '" bukan format PDF atau Word (.doc/.docx). Silakan pilih file lain.');
+        return;
+      }
+      if(file.size > MAX_FILE_SIZE){
+        cancelled = true;
+        alert('File "' + file.name + '" berukuran lebih dari 4 MB. Silakan unggah file yang lebih kecil.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(){
+        if(cancelled) return;
+        data[inp.name] = { fileName: file.name, fileType: file.type, dataUrl: reader.result };
+        pending--;
+        if(pending === 0 && !cancelled) finishSubmit();
+      };
+      reader.onerror = function(){
+        cancelled = true;
+        alert('Gagal membaca file "' + file.name + '".');
+      };
+      reader.readAsDataURL(file);
+    });
+    if(cancelled) return;
   });
 
   // Klik tombol edit / hapus pada baris tabel (kolom "Aksi")
