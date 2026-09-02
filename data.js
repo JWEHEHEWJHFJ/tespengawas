@@ -1,17 +1,10 @@
 // File ini dikelola otomatis lewat Apps Script. Jangan edit manual di GitHub.
 const DATA = [
   {
-    "nama": "saf",
-    "id": 1,
-    "sesi": "fsdf",
-    "ruang": "fsdfs",
-    "nip": "fsf"
-  },
-  {
+    "nip": "affsd",
     "sesi": "dfdf",
-    "ruang": "fsdfs",
     "id": 2,
     "nama": "afa",
-    "nip": "affsd"
+    "ruang": "fsdfs"
   }
 ];
