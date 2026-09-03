@@ -117,6 +117,13 @@ const DATA_OSIS = {
   ],
   "keuangan": [
     {
+      "nominal": 111111111111111100,
+      "keterangan": "dwerwr",
+      "tanggal": "2026-09-03",
+      "jenis": "Pemasukan",
+      "_id": "g17884180937755cr94"
+    },
+    {
       "tanggal": "2026-08-01",
       "keterangan": "Dana kas awal periode dari sekolah",
       "jenis": "Pemasukan",
