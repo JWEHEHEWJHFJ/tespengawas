@@ -123,7 +123,6 @@ const DATA_OSIS = {
       "jenis": "Pemasukan",
       "_id": "g17884180937755cr94"
     },
-    
     {
       "tanggal": "2026-08-08",
       "keterangan": "Iuran kas anggota bulan Agustus",
@@ -150,6 +149,14 @@ const DATA_OSIS = {
     }
   ],
   "lpj": [
+    {
+      "isi": "sffdsfdf4444444444444",
+      "disusunOleh": "M. Alfarizi (Ketua OSIS)",
+      "periode": "fdsffds",
+      "lampiran": null,
+      "tanggal": "2026-09-03",
+      "_id": "g178841840778687fm2"
+    },
     {
       "periode": "fdsffds",
       "disusunOleh": "M. Alfarizi (Ketua OSIS)",
