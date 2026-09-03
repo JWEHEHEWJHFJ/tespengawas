@@ -123,12 +123,7 @@ const DATA_OSIS = {
       "jenis": "Pemasukan",
       "_id": "g17884180937755cr94"
     },
-    {
-      "tanggal": "2026-08-01",
-      "keterangan": "Dana kas awal periode dari sekolah",
-      "jenis": "Pemasukan",
-      "nominal": 1500000
-    },
+    
     {
       "tanggal": "2026-08-08",
       "keterangan": "Iuran kas anggota bulan Agustus",
