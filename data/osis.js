@@ -117,6 +117,13 @@ const DATA_OSIS = {
   ],
   "keuangan": [
     {
+      "keterangan": "dwerwr",
+      "tanggal": "2026-09-03",
+      "jenis": "Pemasukan",
+      "nominal": 6666,
+      "_id": "g1788421086424wgdml"
+    },
+    {
       "nominal": 1444444,
       "jenis": "Pemasukan",
       "tanggal": "2026-09-03",
