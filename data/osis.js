@@ -37,6 +37,13 @@ const DATA_OSIS = {
       "nama": "Bima Satria",
       "kelas": "XI IPS 1",
       "jabatan": "Koordinator Bidang Olahraga & Seni"
+    },
+    {
+      "kelas": "X MIPA 2",
+      "nama": "Muhammad Wijaya",
+      "jabatan": "sasas",
+      "nisn": "0081000222",
+      "_id": "g1788417721887x7h05"
     }
   ],
   "programKerja": [
