@@ -33,7 +33,20 @@
       "_id": "x1788506416063oczxr"
     }
   ],
-  "lpj": [],
+  "lpj": [
+    {
+      "lampiran": {
+        "downloadUrl": "https://script.google.com/macros/s/AKfycbxyd1Q7jlnQDrWta0nu2Hs74uMVeu0RdOmTLsFsvhI/dev",
+        "viewUrl": "https://script.google.com/macros/s/AKfycbxyd1Q7jlnQDrWta0nu2Hs74uMVeu0RdOmTLsFsvhI/dev",
+        "fileName": "Link Lampiran"
+      },
+      "disusunOleh": "Kirana Ayu (Pradana (Ketua Pramuka))",
+      "periode": "fdsffds",
+      "tanggal": "2026-09-04",
+      "isi": "dsds",
+      "_id": "x1788539791634xf7pk"
+    }
+  ],
   "ekstrakurikuler": [],
   "pelanggaran": []
 }
