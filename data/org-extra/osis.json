@@ -1,7 +1,16 @@
 {
   "anggota": [],
   "prokja": [],
-  "kegiatan": [],
+  "kegiatan": [
+    {
+      "tanggalSelesai": "",
+      "nama": "gdg",
+      "tanggalMulai": "2026-09-04",
+      "status": "Berjalan",
+      "deskripsi": "gff",
+      "_id": "x1788504694135ghs0e"
+    }
+  ],
   "keuangan": [
     {
       "tanggal": "2026-09-25",
