@@ -16,7 +16,16 @@
     }
   ],
   "prokja": [],
-  "kegiatan": [],
+  "kegiatan": [
+    {
+      "nama": "gdg",
+      "deskripsi": "hhhhjkh",
+      "status": "Berjalan",
+      "tanggalSelesai": "",
+      "tanggalMulai": "2026-09-04",
+      "_id": "x17885398997112xbvr"
+    }
+  ],
   "keuangan": [
     {
       "jenis": "Pengeluaran",
