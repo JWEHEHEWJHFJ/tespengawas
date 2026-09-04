@@ -15,7 +15,16 @@
       "_id": "x1788506491269cgh6x"
     }
   ],
-  "prokja": [],
+  "prokja": [
+    {
+      "bidang": "fef",
+      "target": "fdf",
+      "nama": "gdg",
+      "capaian": "fdfd",
+      "status": "Berjalan",
+      "_id": "x1788539929056gwqjx"
+    }
+  ],
   "kegiatan": [
     {
       "nama": "gdg",
