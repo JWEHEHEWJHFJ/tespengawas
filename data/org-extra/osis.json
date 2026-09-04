@@ -31,6 +31,14 @@
   ],
   "prokja": [
     {
+      "target": "fdf",
+      "nama": "gdg",
+      "status": "Belum Mulai",
+      "bidang": "fef",
+      "capaian": "fdfd",
+      "_id": "x17885062258136h749"
+    },
+    {
       "bidang": "fef",
       "target": "fdf",
       "status": "Berjalan",
