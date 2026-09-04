@@ -19,6 +19,13 @@
   "kegiatan": [],
   "keuangan": [
     {
+      "jenis": "Pengeluaran",
+      "keterangan": "Perlengkapan panggung seni HUT RI",
+      "tanggal": "2026-09-05",
+      "nominal": 600000,
+      "_id": "x1788539768952izb4z"
+    },
+    {
       "jenis": "Pemasukan",
       "tanggal": "2026-09-11",
       "keterangan": "jljl",
@@ -26,5 +33,7 @@
       "_id": "x1788506416063oczxr"
     }
   ],
-  "lpj": []
+  "lpj": [],
+  "ekstrakurikuler": [],
+  "pelanggaran": []
 }
