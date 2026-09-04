@@ -3,5 +3,18 @@
   "prokja": [],
   "kegiatan": [],
   "keuangan": [],
-  "lpj": []
+  "lpj": [
+    {
+      "disusunOleh": "M. Alfarizi (Ketua OSIS)",
+      "periode": "Minggu ke-3 Agustus 2026",
+      "isi": "dsafsdfdfdfsdffssfsfd bbbb",
+      "tanggal": "2026-09-04",
+      "lampiran": {
+        "viewUrl": "https://script.google.com/macros/s/AKfycbxyd1Q7jlnQDrWta0nu2Hs74uMVeu0RdOmTLsFsvhI/dev",
+        "downloadUrl": "https://script.google.com/macros/s/AKfycbxyd1Q7jlnQDrWta0nu2Hs74uMVeu0RdOmTLsFsvhI/dev",
+        "fileName": "Link Lampiran"
+      },
+      "_id": "x1788488678312vp5v5"
+    }
+  ]
 }
