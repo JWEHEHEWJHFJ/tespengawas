@@ -17,6 +17,14 @@
   ],
   "prokja": [],
   "kegiatan": [],
-  "keuangan": [],
+  "keuangan": [
+    {
+      "jenis": "Pemasukan",
+      "tanggal": "2026-09-11",
+      "keterangan": "jljl",
+      "nominal": 600000,
+      "_id": "x1788506416063oczxr"
+    }
+  ],
   "lpj": []
 }
