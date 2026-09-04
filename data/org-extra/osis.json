@@ -3,6 +3,14 @@
   "prokja": [],
   "kegiatan": [
     {
+      "nama": "gdg",
+      "deskripsi": "twrytry",
+      "status": "Direncanakan",
+      "tanggalMulai": "2026-09-04",
+      "tanggalSelesai": "",
+      "_id": "x1788504732927mvf8w"
+    },
+    {
       "tanggalSelesai": "",
       "nama": "gdg",
       "tanggalMulai": "2026-09-04",
